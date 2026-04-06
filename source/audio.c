@@ -116,6 +116,8 @@ static void audio_thread(void *arg) {
         while (!s_stop_req) {
             if (s_paused) { svcSleepThread(8000000LL); continue; }
             ndspWaveBuf *wb = &s_wave_bufs[cur];
+            // NDSP_WBUF_FREE (0) means channel was reset — exit cleanly
+            if (wb->status == NDSP_WBUF_FREE) break;
             if (wb->status != NDSP_WBUF_DONE) { svcSleepThread(2000000LL); continue; }
 
             drmp3_uint64 n = drmp3_read_pcm_frames_s16(
@@ -136,6 +138,8 @@ static void audio_thread(void *arg) {
 
         // Keep NDSP teardown on the playback thread so reset/queue cleanup
         // cannot race with wave-buffer submission from another thread.
+        // Disable global callback so DSP interrupt handler cannot fire during reset.
+        ndspSetCallback(NULL, NULL);
         ndspChnReset(0);
 
         // Clean up decode state while dl_buf is still alive

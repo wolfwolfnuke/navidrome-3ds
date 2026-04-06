@@ -89,8 +89,10 @@ navidrome-3ds/
    Never realloc the download buffer after calling it.
 
 4. **ndspChnReset(0) from audio_stop** sets wave buffer status to
-   NDSP_WBUF_FREE — the decode loop checks for this to exit cleanly.
-   Do NOT manually set s_wave_bufs[i].status from outside the thread.
+   NDSP_WBUF_FREE — the decode loop MUST check for this to exit cleanly.
+   The value of NDSP_WBUF_FREE (0) is != NDSP_WBUF_DONE, so a naive
+   `status != NDSP_WBUF_DONE` check will not catch it and the loop will
+   continue and call ndspChnWaveBufAdd on a reset channel.
 
 5. **Thread stack**: 512KB needed. dr_mp3 has large stack frames in its
    decode functions. Earlier attempts with 64KB/128KB all stack-overflowed
@@ -108,6 +110,17 @@ navidrome-3ds/
 9. **LightEvent synchronisation** is required between audio_stop() and
    the thread — threadJoin alone is not sufficient because the ndsp DSP
    interrupt handler can fire after join returns and corrupt memory.
+
+10. **ndspSetCallback(NULL, NULL) before ndspChnReset** is required to
+    prevent the DSP interrupt handler from racing with memory cleanup.
+    The global callback fires on ndspChnReset and can access freed memory
+    if not disabled first. Note: ndspSetCallback takes 2 arguments
+    (callback, data), not 3.
+
+11. **API URL buffer must be ≥ 2048 bytes** — `build_url` constructs
+    `http://host:port/rest/endpoint?u=user&p=pass&v=...&c=...&f=xml`
+    which can exceed 1024 bytes with long hostnames/passwords. All URL
+    buffers in api.c are 2048 to avoid truncation warnings.
 
 ---
 
@@ -138,37 +151,48 @@ audio: playback loop ended (stop=1 frames=N)
 audio: thread exit
 ```
 
-**Root cause being investigated**: Memory corruption occurs during
-drmp3_uninit(mp3) or free(mp3) inside the audio thread, apparently
-caused by a race between the thread's cleanup and audio_stop()'s
-ndspChnReset(0) triggering the ndsp DSP interrupt handler.
+**Root cause**: Two race conditions in audio thread cleanup:
 
-**Latest fix attempt** (not yet confirmed working): Added a LightEvent
-(s_exit_event) that the thread signals as its absolute last action.
-audio_stop() now calls LightEvent_Wait(&s_exit_event) before
-threadJoin, guaranteeing the thread has finished all memory operations
-before audio_stop returns and the next song starts.
+1. **Decode loop vs ndspChnReset race**: The decode loop checked
+   `wb->status != NDSP_WBUF_DONE` to decide whether to sleep. But
+   `NDSP_WBUF_FREE == 0`, which is != `NDSP_WBUF_DONE`. So after
+   `audio_stop()` called `ndspChnReset(0)` (setting all buffers to
+   `NDSP_WBUF_FREE`), the next loop iteration would see status=0, fail
+   the `!= NDSP_WBUF_DONE` check, **continue** and attempt to decode into
+   the buffer and call `ndspChnWaveBufAdd(0, wb)` on a reset channel —
+   causing memory corruption.
 
-**The sequence in the latest code**:
-1. audio_stop: s_stop_req = true
-2. audio_stop: httpcCloseContext(s_ctx) → unblocks download
-3. audio_stop: ndspChnReset(0) → sets wave bufs to NDSP_WBUF_FREE
-4. Thread: sees NDSP_WBUF_FREE, exits decode loop
-5. Thread: drmp3_uninit(mp3), free(mp3), free(dl_buf)
-6. Thread: s_playing = false
-7. Thread: debug_log("audio: thread exit")
-8. Thread: LightEvent_Signal(&s_exit_event)  ← NEW
-9. audio_stop: LightEvent_Wait returns        ← NEW
-10. audio_stop: threadJoin (formality)
-11. audio_stop: returns, new song can start
+2. **DSP callback race**: `ndspChnReset(0)` fires a DSP interrupt
+   handler. If that handler fires concurrently with `drmp3_uninit()` and
+   `free()` in the audio thread, it can access freed memory.
 
-**If this still crashes**, the next things to investigate:
-- Whether ndspChnReset in step 3 is firing a DSP callback that
-  runs concurrently with step 5
-- Whether the ndsp interrupt handler needs to be disabled during cleanup
-  (ndspSetCallback(NULL, NULL) before reset)
-- Whether dl_buf needs to outlive drmp3_uninit (drmp3 may access the
-  buffer during uninit, not just during decode)
+**Fixes applied**:
+
+1. Decode loop now checks for `NDSP_WBUF_FREE` explicitly and exits
+   immediately when the channel is reset:
+   ```c
+   ndspWaveBuf *wb = &s_wave_bufs[cur];
+   if (wb->status == NDSP_WBUF_FREE) break;  // channel was reset, exit
+   ```
+
+2. `ndspSetCallback(NULL, NULL)` is called before `ndspChnReset(0)` in
+   the cleanup section to disable the DSP interrupt handler before
+   resetting the channel:
+   ```c
+   ndspSetCallback(NULL, NULL);  // disable callback first
+   ndspChnReset(0);
+   ```
+
+**Cleanup order** (already correct, documented for reference):
+`drmp3_uninit(mp3)` is called while `dl_buf` is still valid. The `done`
+block's second `drmp3_uninit` only fires when `mp3 == NULL` (error path
+where init never succeeded), so there is no double-free.
+
+**If it still crashes**, next steps:
+- Consider adding `ndspChnReset(0)` inside the decode loop after the
+  `NDSP_WBUF_FREE` check as a belt-and-suspenders measure
+- Consider using a separate mutex to protect `drmp3_uninit` + `free` from
+  any remaining interrupt handlers
 
 ---
 

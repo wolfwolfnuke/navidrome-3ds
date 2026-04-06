@@ -1,3 +1,3 @@
-config.o: /var/home/wolfie/Downloads/files/source/config.c \
- /var/home/wolfie/Downloads/files/source/config.h
-/var/home/wolfie/Downloads/files/source/config.h:
+config.o: /var/home/wolfie/navidrome-3ds/source/config.c \
+ /var/home/wolfie/navidrome-3ds/source/config.h
+/var/home/wolfie/navidrome-3ds/source/config.h:

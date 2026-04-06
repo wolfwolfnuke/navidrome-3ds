@@ -174,7 +174,7 @@ void api_cleanup(void) {
 }
 
 int api_ping(void) {
-    char url[1024];
+    char url[2048];
     build_url(url, sizeof(url), "ping", NULL);
 
     Buffer buf = buf_new();
@@ -186,7 +186,7 @@ int api_ping(void) {
 
 int api_get_artists(NaviArtistList *out) {
     out->count = 0;
-    char url[1024];
+    char url[2048];
     build_url(url, sizeof(url), "getArtists", NULL);
 
     Buffer buf = buf_new();
@@ -215,7 +215,7 @@ int api_get_artists(NaviArtistList *out) {
 
 int api_get_albums(const char *artist_id, NaviAlbumList *out) {
     out->count = 0;
-    char extra[128], url[1024];
+    char extra[128], url[2048];
     snprintf(extra, sizeof(extra), "&id=%s", artist_id);
     build_url(url, sizeof(url), "getArtist", extra);
 
@@ -251,7 +251,7 @@ int api_get_albums(const char *artist_id, NaviAlbumList *out) {
 
 int api_get_tracks(const char *album_id, NaviTrackList *out) {
     out->count = 0;
-    char extra[128], url[1024];
+    char extra[128], url[2048];
     snprintf(extra, sizeof(extra), "&id=%s", album_id);
     build_url(url, sizeof(url), "getAlbum", extra);
 

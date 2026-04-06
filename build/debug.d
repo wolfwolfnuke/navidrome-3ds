@@ -1,5 +1,5 @@
-debug.o: /var/home/wolfie/Downloads/files/source/debug.c \
- /var/home/wolfie/Downloads/files/source/debug.h \
+debug.o: /var/home/wolfie/navidrome-3ds/source/debug.c \
+ /var/home/wolfie/navidrome-3ds/source/debug.h \
  /opt/devkitpro/libctru/include/3ds.h \
  /opt/devkitpro/libctru/include/3ds/types.h \
  /opt/devkitpro/libctru/include/3ds/result.h \
@@ -87,7 +87,7 @@ debug.o: /var/home/wolfie/Downloads/files/source/debug.c \
  /opt/devkitpro/libctru/include/3ds/font.h \
  /opt/devkitpro/libctru/include/3ds/gdbhio_dev.h \
  /opt/devkitpro/libctru/include/3ds/3dslink.h
-/var/home/wolfie/Downloads/files/source/debug.h:
+/var/home/wolfie/navidrome-3ds/source/debug.h:
 /opt/devkitpro/libctru/include/3ds.h:
 /opt/devkitpro/libctru/include/3ds/types.h:
 /opt/devkitpro/libctru/include/3ds/result.h:
