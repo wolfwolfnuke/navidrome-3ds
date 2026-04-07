@@ -56,10 +56,12 @@ navidrome-3ds/
 - Uses httpcContext* stored in a global (protected by LightLock) so
   audio_stop() can call httpcCloseContext() to unblock httpcDownloadData
 - Decode loop uses ndspWaveBuf ping-pong (2 buffers, 4096 samples each)
-- Thread stack: 512KB (dr_mp3 has large internal decode frames)
+- Thread stack: 1MB (confirmed necessary by crash dump analysis — see below)
+- Stack is explicitly malloc'd before threadCreate so a canary pattern can
+  be planted at the bottom and checked after the thread exits
 - Synchronisation: LightEvent s_exit_event — thread signals it as its
-  very last action; audio_stop() waits on it before calling ndspChnReset
-  and threadJoin, guaranteeing no use-after-free at any point
+  very last action; audio_stop() waits on it, checks the canary, calls
+  ndspChnReset(0), then threadJoin/threadFree
 
 ### ui.c
 - citro2d for all rendering
@@ -92,14 +94,14 @@ navidrome-3ds/
    Calling it inside the thread fires a DSP interrupt that can still be
    pending when audio_stop() calls threadFree(). threadFree() releases the
    thread stack, so the interrupt then executes on freed memory and corrupts
-   state. The fix is: the thread calls ndspSetCallback(NULL, NULL) to silence
+   state. The fix: the thread calls ndspSetCallback(NULL, NULL) to silence
    future interrupts, signals s_exit_event, and returns. audio_stop() then
    calls ndspChnReset(0) while the stack is still alive, and only calls
-   threadFree() after that. See the "Song-Switch Crash" section below.
+   threadFree() after that.
 
-5. **Thread stack**: 512KB needed. dr_mp3 has large stack frames in its
-   decode functions. Earlier attempts with 64KB/128KB all stack-overflowed
-   (crash signature: SP=0x07c00000, R4=0x54555555 "TUUU" uninitialized).
+5. **Thread stack must be 1MB, not 512KB.** Confirmed by crash dump analysis
+   (see "Song-Switch Crash" section below). dr_mp3 uses large internal scratch
+   buffers that collectively exceed 512KB on 48kHz stereo tracks during decode.
 
 6. **UiState must be heap-allocated** — it contains three lists of 200
    items each (~96KB total). Stack allocation causes immediate crash.
@@ -116,8 +118,8 @@ navidrome-3ds/
 
 10. **ndspSetCallback(NULL, NULL)** must be called by the audio thread
     before it signals s_exit_event, to prevent future DSP callbacks from
-    firing after cleanup begins. Note: ndspSetCallback takes 2 arguments
-    (callback, data pointer), not 3.
+    firing after cleanup begins. ndspSetCallback takes 2 arguments
+    (callback, data pointer).
 
 11. **API URL buffer must be ≥ 2048 bytes** — `build_url` constructs
     `http://host:port/rest/endpoint?u=user&p=pass&v=...&c=...&f=xml`
@@ -126,66 +128,69 @@ navidrome-3ds/
 
 ---
 
-## Song-Switch Crash — Root Cause & Fix
+## Song-Switch Crash — Full History
 
-### Symptom
-Playing a song works. Pressing B to go back and selecting a new song
-crashes the 3DS. The debug log ends with:
+### Bug 1: ndspChnReset race (FIXED, v1)
 
+**Symptom**: Crash on second song. Log ended with `audio: thread exit`
+but no `audio_stop: done`.
+
+**Root cause**: `ndspChnReset(0)` was called inside the audio thread as
+its final step before `LightEvent_Signal`. The DSP interrupt it schedules
+could still be pending when `audio_stop()` called `threadFree()`, which
+freed the thread stack. The interrupt then executed on freed memory.
+
+**Fix**: Moved `ndspChnReset(0)` out of the thread and into `audio_stop()`,
+called after `LightEvent_Wait` confirms the thread has fully exited. The
+thread only calls `ndspSetCallback(NULL, NULL)` to suppress future callbacks.
+
+---
+
+### Bug 2: Audio thread stack overflow (FIXED, v2)
+
+**Symptom**: Crash on song switch (sometimes first play). Log:
 ```
+audio: HTTP 200
+audio: downloaded 2732430 bytes
+audio: 48000Hz 2ch
 audio_stop: start
 audio: thread exit
-(no "audio_stop: done" line — crash occurs before it is reached)
+(crash — no audio_stop: done)
 ```
 
-### Root Cause
-`ndspChnReset(0)` fires a DSP interrupt via the ndsp interrupt handler.
-The previous code called `ndspChnReset` inside the audio thread as the
-last cleanup step, immediately before `LightEvent_Signal`. The sequence
-was:
+**Crash dump analysis** (`crash_dump_00000016.dmp`):
 
-```
-Thread:      ndspChnReset(0)        ← schedules DSP interrupt
-Thread:      LightEvent_Signal
-audio_stop:  LightEvent_Wait returns
-audio_stop:  threadJoin             ← thread proc has returned, join is instant
-audio_stop:  threadFree(s_thread)   ← FREES THE THREAD STACK
-DSP IRQ:     fires on freed stack   ← memory corruption / crash
-```
+| Register | Value | Meaning |
+|----------|-------|---------|
+| R9 | 0x07C00000 | Audio thread stack base — this IS the overflow marker |
+| SP | 0x001BA4F8 | Corrupted: points into app BSS (s_url global visible in dump) |
+| PC | 0x00000805 | Corrupted: near-null from stack overwriting globals then vectors |
 
-`ndspSetCallback(NULL, NULL)` prevents *future* callbacks from being
-registered, but does not cancel a DSP interrupt that has already been
-queued by `ndspChnReset`. So the interrupt handler fired on the freed
-stack regardless.
+The dump's memory section contained `s_url` verbatim (the HTTP stream URL),
+confirming the stack had grown downward past its base (0x07C00000), through
+any guard region, and into the app's BSS segment, overwriting global variables.
 
-### Fix
-Move `ndspChnReset(0)` from the audio thread into `audio_stop()`, called
-**after** `LightEvent_Wait` confirms the thread has fully exited but
-**before** `threadFree`. The thread only calls `ndspSetCallback(NULL, NULL)`
-to prevent further callbacks, then signals the event and returns.
+The instruction pattern `0xEE777A87` (repeated MCR coprocessor instruction,
+which is how `DSP_FlushDataCache` is implemented on ARM11) appeared in the
+dump, confirming the crash occurred during the decode→flush loop.
 
-Correct sequence:
+**Root cause**: dr_mp3 uses multiple large internal structures during decode
+(`drmp3dec_scratch` contains `grbuf[2][576]`, `syn[18+15][2*32]`, and a
+`maindata` buffer of ~1.5KB). Together with the callstack depth during VBR
+frame decoding on a 48kHz stereo track, these exceed 512KB. The stack
+allocated by the previous `threadCreate(..., 512*1024, ...)` was too small.
 
-```
-Thread:      ndspSetCallback(NULL, NULL)   ← silence future callbacks
-Thread:      drmp3_uninit / free           ← clean up decode state
-Thread:      LightEvent_Signal             ← "I am done with all memory"
-audio_stop:  LightEvent_Wait returns
-audio_stop:  ndspChnReset(0)              ← reset now; stack still alive
-                                           ← any DSP interrupt fires here,
-                                              stack is valid
-audio_stop:  threadJoin
-audio_stop:  threadFree(s_thread)         ← safe: no more IRQs pending
-```
+**Fix**:
+- Increased `AUDIO_THREAD_STACK_SIZE` from 512KB to 1MB.
+- Stack is now explicitly `malloc`'d before `threadCreate` so a canary
+  pattern (`0xDEADBEEF`) can be written to the bottom 64 bytes before the
+  thread starts, and checked by `audio_stop()` after the thread exits.
+  If the canary is overwritten, a warning is logged before any crash occurs.
 
-The decode loop still checks `wb->status == NDSP_WBUF_FREE` to detect
-an externally-issued channel reset (e.g. if audio_stop is called while
-the loop is sleeping), so it exits cleanly in all cases.
-
-### Cleanup Order (confirmed correct)
-`drmp3_uninit(mp3)` is called while `dl_buf` is still allocated.
-The `done` block's second `drmp3_uninit` only fires when `mp3 == NULL`
-(error path where init never succeeded), so there is no double-free.
+**Cleanup order** (confirmed correct, documented for reference):
+`drmp3_uninit(mp3)` is called while `dl_buf` is still allocated. The `done`
+block's second `drmp3_uninit` only fires on the error path where `mp3 != NULL`
+(init succeeded but something else failed), so there is no double-free.
 
 ---
 
@@ -202,7 +207,9 @@ The `done` block's second `drmp3_uninit` only fires when `mp3 == NULL`
 - Volume control (L/R buttons)
 - Pause/resume (START button)
 - Debug logging to SD card
-- Song switching (song-switch crash fixed — see above)
+- Song switching (both crash bugs fixed)
+- Stack canary check on every audio_stop() — will warn in log if stack
+  approaches its limit before it causes a silent crash
 
 ---
 

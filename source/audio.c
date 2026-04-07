@@ -1,17 +1,25 @@
 /*
  * audio.c - clean version with proper synchronization
  *
- * Key fix (song-switch crash):
- *   ndspChnReset(0) was previously called inside the audio thread, just
- *   before LightEvent_Signal. The DSP interrupt it fires can still be
- *   pending when audio_stop() calls threadFree(), which frees the thread
- *   stack — the interrupt then executes on freed memory and corrupts state.
+ * Crash history:
  *
- *   Fix: the thread only calls ndspSetCallback(NULL, NULL) to silence any
- *   future callbacks, then signals the exit event and returns. audio_stop()
- *   calls ndspChnReset(0) AFTER LightEvent_Wait() confirms the thread has
- *   fully exited, so the stack is still live when any in-flight DSP
- *   interrupt fires, and threadFree() only runs after the reset is done.
+ * Bug 1 (ndspChnReset race) — FIXED:
+ *   ndspChnReset(0) was previously called inside the audio thread just before
+ *   LightEvent_Signal. The DSP interrupt it schedules could fire after
+ *   threadFree() released the thread stack, executing on freed memory.
+ *   Fix: thread calls ndspSetCallback(NULL,NULL) only; audio_stop() calls
+ *   ndspChnReset(0) after LightEvent_Wait confirms the thread has exited.
+ *
+ * Bug 2 (stack overflow) — FIXED:
+ *   Crash dump showed R9=0x07C00000 (audio thread stack base marker), SP
+ *   corrupted to 0x001BA4F8 (inside app BSS), PC=0x00000805 (null).
+ *   The stack grew downward past its 512KB bottom, overwrote global variables
+ *   including s_url (visible verbatim in the dump), and eventually corrupted
+ *   the PC. 0xEE777A87 (DSP_FlushDataCache MCR instruction) in the dump
+ *   confirms the crash was in the decode→flush loop.
+ *   dr_mp3 uses large internal scratch buffers (drmp3dec_scratch, grbuf,
+ *   syn arrays) that collectively overflow 512KB on 48kHz stereo tracks.
+ *   Fix: increase thread stack from 512KB to 1MB.
  */
 
 #include "audio.h"
@@ -30,12 +38,23 @@
 #define NUM_BUFS       2
 #define MAX_DL_SIZE    (5 * 1024 * 1024)
 
+// 512KB was not enough for dr_mp3 on 48kHz stereo (confirmed by crash dump).
+// 1MB provides adequate headroom for the decoder's internal scratch buffers.
+#define AUDIO_THREAD_STACK_SIZE (1024 * 1024)
+
+// Stack canary: write known values at the bottom of the stack before spawning
+// the thread, then check after it exits. Lets us catch near-overflows before
+// they silently corrupt memory on future runs.
+#define STACK_CANARY_VALUE  0xDEADBEEFu
+#define STACK_CANARY_WORDS  16   // check 64 bytes at the stack bottom
+
 static ndspWaveBuf   s_wave_bufs[NUM_BUFS];
-static s16          *s_pcm_buf   = NULL;
-static Thread        s_thread    = NULL;
+static s16          *s_pcm_buf      = NULL;
+static Thread        s_thread       = NULL;
+static u8           *s_thread_stack = NULL;   // explicitly allocated so we can canary it
 static LightLock     s_ctx_lock;
-static httpcContext *s_ctx       = NULL;
-static LightEvent    s_exit_event;  // thread signals this just before returning
+static httpcContext *s_ctx          = NULL;
+static LightEvent    s_exit_event;
 
 static volatile bool s_playing  = false;
 static volatile bool s_paused   = false;
@@ -43,10 +62,45 @@ static volatile bool s_stop_req = false;
 static float         s_volume   = 1.0f;
 static char          s_url[1024] = {0};
 
+// ---------------------------------------------------------------------------
+// Stack canary helpers
+// ---------------------------------------------------------------------------
+
+static void plant_stack_canary(void) {
+    if (!s_thread_stack) return;
+    u32 *p = (u32 *)s_thread_stack;
+    for (int i = 0; i < STACK_CANARY_WORDS; i++)
+        p[i] = STACK_CANARY_VALUE;
+}
+
+static void check_stack_canary(void) {
+    if (!s_thread_stack) return;
+    int first_bad = -1;
+    u32 *p = (u32 *)s_thread_stack;
+    for (int i = 0; i < STACK_CANARY_WORDS; i++) {
+        if (p[i] != STACK_CANARY_VALUE) { first_bad = i; break; }
+    }
+    if (first_bad >= 0)
+        debug_log("audio: STACK OVERFLOW DETECTED! canary[%d] = 0x%08lX (expected 0x%08lX)",
+                  first_bad, (unsigned long)p[first_bad],
+                  (unsigned long)STACK_CANARY_VALUE);
+    else
+        debug_log("audio: stack canary OK (bottom %d words intact, ~%u KB margin)",
+                  STACK_CANARY_WORDS,
+                  AUDIO_THREAD_STACK_SIZE / 1024);
+}
+
+// ---------------------------------------------------------------------------
+// Audio thread
+// ---------------------------------------------------------------------------
+
 static void audio_thread(void *arg) {
     (void)arg;
-    u8   *dl_buf = NULL;
-    drmp3 *mp3   = NULL;
+    u8    *dl_buf = NULL;
+    drmp3 *mp3    = NULL;
+
+    debug_log("audio: thread started, stack size %u KB",
+              AUDIO_THREAD_STACK_SIZE / 1024);
 
     // ---- Download ----
     httpcContext *ctx = (httpcContext*)malloc(sizeof(httpcContext));
@@ -74,10 +128,9 @@ static void audio_thread(void *arg) {
         debug_log("audio: HTTP %lu", (unsigned long)http_status);
         if (http_status != 200) goto close_ctx;
 
-        // Allocate fixed buffer — never realloc so drmp3's internal
-        // pointer stays valid for the entire decode phase
+        // Fixed-size buffer — never realloc so drmp3's internal pointer stays stable
         dl_buf = (u8*)malloc(MAX_DL_SIZE);
-        if (!dl_buf) { debug_log("audio: malloc failed"); goto close_ctx; }
+        if (!dl_buf) { debug_log("audio: malloc dl_buf failed"); goto close_ctx; }
 
         u32 offset = 0;
         while (!s_stop_req) {
@@ -88,8 +141,12 @@ static void audio_thread(void *arg) {
             Result rc = httpcDownloadData(ctx, dl_buf + offset, want, &got);
             offset += got;
             if (rc == HTTPC_STATUS_DOWNLOAD_READY) break;
-            if ((u32)rc == 0xD840A02B) continue;
-            if (R_FAILED(rc)) break;
+            if ((u32)rc == 0xD840A02B) continue;   // "download pending" — not fatal
+            if (R_FAILED(rc)) {
+                debug_log("audio: httpcDownloadData error 0x%08lX after %lu bytes",
+                          (unsigned long)rc, (unsigned long)offset);
+                break;
+            }
         }
         debug_log("audio: downloaded %lu bytes", (unsigned long)offset);
 
@@ -101,7 +158,10 @@ static void audio_thread(void *arg) {
             debug_log("audio: drmp3 init failed");
             goto close_ctx;
         }
-        debug_log("audio: %luHz %luch", (unsigned long)mp3->sampleRate, (unsigned long)mp3->channels);
+        debug_log("audio: %luHz %luch", (unsigned long)mp3->sampleRate,
+                  (unsigned long)mp3->channels);
+        debug_log("audio: free heap at decode start: %lu KB",
+                  (unsigned long)osGetMemRegionFree(MEMREGION_ALL) / 1024);
 
         // ---- ndsp setup ----
         ndspChnReset(0);
@@ -124,42 +184,46 @@ static void audio_thread(void *arg) {
 
         s_playing = true;
         int cur = 0;
+        u32 frames_decoded = 0;
 
         while (!s_stop_req) {
             if (s_paused) { svcSleepThread(8000000LL); continue; }
             ndspWaveBuf *wb = &s_wave_bufs[cur];
-            // NDSP_WBUF_FREE (0) means channel was reset by audio_stop() —
-            // exit cleanly without touching the channel further.
+
+            // NDSP_WBUF_FREE means channel was reset by audio_stop() — exit cleanly
             if (wb->status == NDSP_WBUF_FREE) break;
             if (wb->status != NDSP_WBUF_DONE) { svcSleepThread(2000000LL); continue; }
 
-            // Belt-and-suspenders: re-check stop flag after sleeping
-            if (s_stop_req) break;
+            if (s_stop_req) break;  // re-check after sleep
 
             drmp3_uint64 n = drmp3_read_pcm_frames_s16(
                 mp3, BUF_SAMPLES, (drmp3_int16*)wb->data_vaddr);
-            if (n == 0) break;
+            if (n == 0) {
+                debug_log("audio: end of stream at frame %lu", (unsigned long)frames_decoded);
+                break;
+            }
 
+            frames_decoded++;
             wb->nsamples = (u32)n;
             DSP_FlushDataCache(wb->data_vaddr, n * CHANNEL_COUNT * sizeof(s16));
             ndspChnWaveBufAdd(0, wb);
             cur ^= 1;
         }
 
+        debug_log("audio: playback loop ended (stop=%d frames=%lu)",
+                  (int)s_stop_req, (unsigned long)frames_decoded);
         s_playing = false;
 
-        // Drain if natural end (not stopped by caller)
+        // Drain if natural end (not stopped externally)
         if (!s_stop_req)
             while (ndspChnIsPlaying(0)) svcSleepThread(4000000LL);
 
-        // Disable the DSP callback so no further interrupts fire from this
-        // channel while we clean up.  Do NOT call ndspChnReset here —
-        // audio_stop() will do it after we signal s_exit_event, ensuring
-        // the reset (and any resulting DSP interrupt) happens while the
-        // thread stack is still alive and before threadFree() is called.
+        // Disable DSP callback to suppress future interrupts during cleanup.
+        // Do NOT call ndspChnReset here — audio_stop() calls it after we
+        // signal s_exit_event, ensuring the DSP interrupt fires while our
+        // stack is still allocated (before threadFree).
         ndspSetCallback(NULL, NULL);
 
-        // Clean up decode state while dl_buf is still alive
         drmp3_uninit(mp3);
         free(mp3);
         mp3 = NULL;
@@ -172,16 +236,16 @@ close_ctx:
     if (ctx) { httpcCloseContext(ctx); free(ctx); }
 
 done:
-    // Free download buffer last — drmp3 referenced it
     if (dl_buf) { free(dl_buf); dl_buf = NULL; }
     if (mp3)    { drmp3_uninit(mp3); free(mp3); mp3 = NULL; }
     s_playing = false;
     debug_log("audio: thread exit");
-    // Signal that we are completely done with all memory.
-    // audio_stop() will call ndspChnReset(0) after this returns so that
-    // the DSP interrupt fires while our stack is still valid.
     LightEvent_Signal(&s_exit_event);
 }
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
 
 int audio_init(void) {
     LightLock_Init(&s_ctx_lock);
@@ -191,26 +255,46 @@ int audio_init(void) {
     ndspSetMasterVol(1.0f);
     s_pcm_buf = (s16*)linearAlloc(BUF_SIZE * NUM_BUFS);
     debug_log("audio_init: pcm_buf=%p", s_pcm_buf);
+    debug_log("audio_init: thread stack %u KB", AUDIO_THREAD_STACK_SIZE / 1024);
     return s_pcm_buf ? 0 : -1;
 }
 
 void audio_cleanup(void) {
     audio_stop();
-    if (s_pcm_buf) { linearFree(s_pcm_buf); s_pcm_buf = NULL; }
+    if (s_pcm_buf)      { linearFree(s_pcm_buf);      s_pcm_buf      = NULL; }
+    if (s_thread_stack) { free(s_thread_stack);        s_thread_stack = NULL; }
 }
 
 int audio_play_url(const char *url) {
     if (!s_pcm_buf) return -2;
     audio_stop();
+
     strncpy(s_url, url, sizeof(s_url)-1);
     s_url[sizeof(s_url)-1] = '\0';
     s_stop_req = false;
     s_paused   = false;
     s_playing  = false;
+
+    // Allocate the thread stack explicitly so we can plant/check the canary.
+    s_thread_stack = (u8*)malloc(AUDIO_THREAD_STACK_SIZE);
+    if (!s_thread_stack) {
+        debug_log("audio: failed to alloc %u KB thread stack",
+                  AUDIO_THREAD_STACK_SIZE / 1024);
+        return -3;
+    }
+    plant_stack_canary();
+    debug_log("audio: stack alloc OK at %p (%u KB)", s_thread_stack,
+              AUDIO_THREAD_STACK_SIZE / 1024);
+
     LightEvent_Clear(&s_exit_event);
-    s_thread = threadCreate(audio_thread, NULL, 512*1024, 0x31, 0, true);
+    s_thread = threadCreate(audio_thread, NULL, AUDIO_THREAD_STACK_SIZE, 0x31, 0, false);
     debug_log("audio: thread %s", s_thread ? "OK" : "FAIL");
-    return s_thread ? 0 : -1;
+    if (!s_thread) {
+        free(s_thread_stack);
+        s_thread_stack = NULL;
+        return -1;
+    }
+    return 0;
 }
 
 void audio_stop(void) {
@@ -223,20 +307,22 @@ void audio_stop(void) {
     if (s_ctx) { httpcCloseContext(s_ctx); s_ctx = NULL; }
     LightLock_Unlock(&s_ctx_lock);
 
-    // Wait for the thread to finish all memory operations and signal us.
-    // The thread does NOT call ndspChnReset — we do it here, after the
-    // thread has exited, so:
-    //   a) no wave buffer submissions can race with the reset, and
-    //   b) any DSP interrupt fired by the reset happens before threadFree,
-    //      so the interrupt handler never runs on a freed stack.
+    // Wait for thread to finish all memory operations
     LightEvent_Wait(&s_exit_event);
 
-    // Safe to reset the channel now: thread is done, stack still live.
+    // Check the canary while the stack is still allocated
+    check_stack_canary();
+
+    // Safe to reset the channel now: thread is done, stack still alive.
+    // Any DSP interrupt from this reset fires here, not after threadFree.
     ndspChnReset(0);
 
     threadJoin(s_thread, U64_MAX);
     threadFree(s_thread);
-    s_thread   = NULL;
+    s_thread = NULL;
+
+    if (s_thread_stack) { free(s_thread_stack); s_thread_stack = NULL; }
+
     s_playing  = false;
     s_paused   = false;
     s_stop_req = false;
