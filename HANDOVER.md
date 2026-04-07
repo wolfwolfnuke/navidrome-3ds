@@ -58,8 +58,8 @@ navidrome-3ds/
 - Decode loop uses ndspWaveBuf ping-pong (2 buffers, 4096 samples each)
 - Thread stack: 512KB (dr_mp3 has large internal decode frames)
 - Synchronisation: LightEvent s_exit_event — thread signals it as its
-  very last action; audio_stop() waits on it before threadJoin to
-  guarantee no use-after-free between thread cleanup and next song start
+  very last action; audio_stop() waits on it before calling ndspChnReset
+  and threadJoin, guaranteeing no use-after-free at any point
 
 ### ui.c
 - citro2d for all rendering
@@ -88,11 +88,14 @@ navidrome-3ds/
 3. **drmp3_init_memory stores a pointer** to your buffer internally.
    Never realloc the download buffer after calling it.
 
-4. **ndspChnReset(0) from audio_stop** sets wave buffer status to
-   NDSP_WBUF_FREE — the decode loop MUST check for this to exit cleanly.
-   The value of NDSP_WBUF_FREE (0) is != NDSP_WBUF_DONE, so a naive
-   `status != NDSP_WBUF_DONE` check will not catch it and the loop will
-   continue and call ndspChnWaveBufAdd on a reset channel.
+4. **ndspChnReset(0) must be called from audio_stop(), not the audio thread.**
+   Calling it inside the thread fires a DSP interrupt that can still be
+   pending when audio_stop() calls threadFree(). threadFree() releases the
+   thread stack, so the interrupt then executes on freed memory and corrupts
+   state. The fix is: the thread calls ndspSetCallback(NULL, NULL) to silence
+   future interrupts, signals s_exit_event, and returns. audio_stop() then
+   calls ndspChnReset(0) while the stack is still alive, and only calls
+   threadFree() after that. See the "Song-Switch Crash" section below.
 
 5. **Thread stack**: 512KB needed. dr_mp3 has large stack frames in its
    decode functions. Earlier attempts with 64KB/128KB all stack-overflowed
@@ -111,16 +114,78 @@ navidrome-3ds/
    the thread — threadJoin alone is not sufficient because the ndsp DSP
    interrupt handler can fire after join returns and corrupt memory.
 
-10. **ndspSetCallback(NULL, NULL) before ndspChnReset** is required to
-    prevent the DSP interrupt handler from racing with memory cleanup.
-    The global callback fires on ndspChnReset and can access freed memory
-    if not disabled first. Note: ndspSetCallback takes 2 arguments
-    (callback, data), not 3.
+10. **ndspSetCallback(NULL, NULL)** must be called by the audio thread
+    before it signals s_exit_event, to prevent future DSP callbacks from
+    firing after cleanup begins. Note: ndspSetCallback takes 2 arguments
+    (callback, data pointer), not 3.
 
 11. **API URL buffer must be ≥ 2048 bytes** — `build_url` constructs
     `http://host:port/rest/endpoint?u=user&p=pass&v=...&c=...&f=xml`
     which can exceed 1024 bytes with long hostnames/passwords. All URL
     buffers in api.c are 2048 to avoid truncation warnings.
+
+---
+
+## Song-Switch Crash — Root Cause & Fix
+
+### Symptom
+Playing a song works. Pressing B to go back and selecting a new song
+crashes the 3DS. The debug log ends with:
+
+```
+audio_stop: start
+audio: thread exit
+(no "audio_stop: done" line — crash occurs before it is reached)
+```
+
+### Root Cause
+`ndspChnReset(0)` fires a DSP interrupt via the ndsp interrupt handler.
+The previous code called `ndspChnReset` inside the audio thread as the
+last cleanup step, immediately before `LightEvent_Signal`. The sequence
+was:
+
+```
+Thread:      ndspChnReset(0)        ← schedules DSP interrupt
+Thread:      LightEvent_Signal
+audio_stop:  LightEvent_Wait returns
+audio_stop:  threadJoin             ← thread proc has returned, join is instant
+audio_stop:  threadFree(s_thread)   ← FREES THE THREAD STACK
+DSP IRQ:     fires on freed stack   ← memory corruption / crash
+```
+
+`ndspSetCallback(NULL, NULL)` prevents *future* callbacks from being
+registered, but does not cancel a DSP interrupt that has already been
+queued by `ndspChnReset`. So the interrupt handler fired on the freed
+stack regardless.
+
+### Fix
+Move `ndspChnReset(0)` from the audio thread into `audio_stop()`, called
+**after** `LightEvent_Wait` confirms the thread has fully exited but
+**before** `threadFree`. The thread only calls `ndspSetCallback(NULL, NULL)`
+to prevent further callbacks, then signals the event and returns.
+
+Correct sequence:
+
+```
+Thread:      ndspSetCallback(NULL, NULL)   ← silence future callbacks
+Thread:      drmp3_uninit / free           ← clean up decode state
+Thread:      LightEvent_Signal             ← "I am done with all memory"
+audio_stop:  LightEvent_Wait returns
+audio_stop:  ndspChnReset(0)              ← reset now; stack still alive
+                                           ← any DSP interrupt fires here,
+                                              stack is valid
+audio_stop:  threadJoin
+audio_stop:  threadFree(s_thread)         ← safe: no more IRQs pending
+```
+
+The decode loop still checks `wb->status == NDSP_WBUF_FREE` to detect
+an externally-issued channel reset (e.g. if audio_stop is called while
+the loop is sleeping), so it exits cleanly in all cases.
+
+### Cleanup Order (confirmed correct)
+`drmp3_uninit(mp3)` is called while `dl_buf` is still allocated.
+The `done` block's second `drmp3_uninit` only fires when `mp3 == NULL`
+(error path where init never succeeded), so there is no double-free.
 
 ---
 
@@ -137,62 +202,7 @@ navidrome-3ds/
 - Volume control (L/R buttons)
 - Pause/resume (START button)
 - Debug logging to SD card
-
-### Current Issue — Crash on Song Switch
-
-**Symptom**: Playing a song works. Pressing B to go back and selecting
-a new song crashes the 3DS.
-
-**What the log shows**:
-```
-audio_stop: signalling
-audio: playback loop ended (stop=1 frames=N)
-  *garbage characters here*
-audio: thread exit
-```
-
-**Root cause**: Two race conditions in audio thread cleanup:
-
-1. **Decode loop vs ndspChnReset race**: The decode loop checked
-   `wb->status != NDSP_WBUF_DONE` to decide whether to sleep. But
-   `NDSP_WBUF_FREE == 0`, which is != `NDSP_WBUF_DONE`. So after
-   `audio_stop()` called `ndspChnReset(0)` (setting all buffers to
-   `NDSP_WBUF_FREE`), the next loop iteration would see status=0, fail
-   the `!= NDSP_WBUF_DONE` check, **continue** and attempt to decode into
-   the buffer and call `ndspChnWaveBufAdd(0, wb)` on a reset channel —
-   causing memory corruption.
-
-2. **DSP callback race**: `ndspChnReset(0)` fires a DSP interrupt
-   handler. If that handler fires concurrently with `drmp3_uninit()` and
-   `free()` in the audio thread, it can access freed memory.
-
-**Fixes applied**:
-
-1. Decode loop now checks for `NDSP_WBUF_FREE` explicitly and exits
-   immediately when the channel is reset:
-   ```c
-   ndspWaveBuf *wb = &s_wave_bufs[cur];
-   if (wb->status == NDSP_WBUF_FREE) break;  // channel was reset, exit
-   ```
-
-2. `ndspSetCallback(NULL, NULL)` is called before `ndspChnReset(0)` in
-   the cleanup section to disable the DSP interrupt handler before
-   resetting the channel:
-   ```c
-   ndspSetCallback(NULL, NULL);  // disable callback first
-   ndspChnReset(0);
-   ```
-
-**Cleanup order** (already correct, documented for reference):
-`drmp3_uninit(mp3)` is called while `dl_buf` is still valid. The `done`
-block's second `drmp3_uninit` only fires when `mp3 == NULL` (error path
-where init never succeeded), so there is no double-free.
-
-**If it still crashes**, next steps:
-- Consider adding `ndspChnReset(0)` inside the decode loop after the
-  `NDSP_WBUF_FREE` check as a belt-and-suspenders measure
-- Consider using a separate mutex to protect `drmp3_uninit` + `free` from
-  any remaining interrupt handlers
+- Song switching (song-switch crash fixed — see above)
 
 ---
 

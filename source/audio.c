@@ -1,5 +1,17 @@
 /*
  * audio.c - clean version with proper synchronization
+ *
+ * Key fix (song-switch crash):
+ *   ndspChnReset(0) was previously called inside the audio thread, just
+ *   before LightEvent_Signal. The DSP interrupt it fires can still be
+ *   pending when audio_stop() calls threadFree(), which frees the thread
+ *   stack — the interrupt then executes on freed memory and corrupts state.
+ *
+ *   Fix: the thread only calls ndspSetCallback(NULL, NULL) to silence any
+ *   future callbacks, then signals the exit event and returns. audio_stop()
+ *   calls ndspChnReset(0) AFTER LightEvent_Wait() confirms the thread has
+ *   fully exited, so the stack is still live when any in-flight DSP
+ *   interrupt fires, and threadFree() only runs after the reset is done.
  */
 
 #include "audio.h"
@@ -91,7 +103,7 @@ static void audio_thread(void *arg) {
         }
         debug_log("audio: %luHz %luch", (unsigned long)mp3->sampleRate, (unsigned long)mp3->channels);
 
-        // ---- ndsp ----
+        // ---- ndsp setup ----
         ndspChnReset(0);
         ndspChnSetInterp(0, NDSP_INTERP_LINEAR);
         ndspChnSetRate(0, (float)mp3->sampleRate);
@@ -116,13 +128,13 @@ static void audio_thread(void *arg) {
         while (!s_stop_req) {
             if (s_paused) { svcSleepThread(8000000LL); continue; }
             ndspWaveBuf *wb = &s_wave_bufs[cur];
-            // NDSP_WBUF_FREE (0) means channel was reset — exit cleanly
+            // NDSP_WBUF_FREE (0) means channel was reset by audio_stop() —
+            // exit cleanly without touching the channel further.
             if (wb->status == NDSP_WBUF_FREE) break;
             if (wb->status != NDSP_WBUF_DONE) { svcSleepThread(2000000LL); continue; }
 
-            // Belt-and-suspenders: if stop was requested while we slept,
-            // reset the channel so ndspChnWaveBufAdd becomes a no-op.
-            if (s_stop_req) { ndspChnReset(0); break; }
+            // Belt-and-suspenders: re-check stop flag after sleeping
+            if (s_stop_req) break;
 
             drmp3_uint64 n = drmp3_read_pcm_frames_s16(
                 mp3, BUF_SAMPLES, (drmp3_int16*)wb->data_vaddr);
@@ -136,15 +148,16 @@ static void audio_thread(void *arg) {
 
         s_playing = false;
 
-        // Drain if natural end (not stopped)
+        // Drain if natural end (not stopped by caller)
         if (!s_stop_req)
             while (ndspChnIsPlaying(0)) svcSleepThread(4000000LL);
 
-        // Keep NDSP teardown on the playback thread so reset/queue cleanup
-        // cannot race with wave-buffer submission from another thread.
-        // Disable global callback so DSP interrupt handler cannot fire during reset.
+        // Disable the DSP callback so no further interrupts fire from this
+        // channel while we clean up.  Do NOT call ndspChnReset here —
+        // audio_stop() will do it after we signal s_exit_event, ensuring
+        // the reset (and any resulting DSP interrupt) happens while the
+        // thread stack is still alive and before threadFree() is called.
         ndspSetCallback(NULL, NULL);
-        ndspChnReset(0);
 
         // Clean up decode state while dl_buf is still alive
         drmp3_uninit(mp3);
@@ -164,7 +177,9 @@ done:
     if (mp3)    { drmp3_uninit(mp3); free(mp3); mp3 = NULL; }
     s_playing = false;
     debug_log("audio: thread exit");
-    // Signal that we are completely done with all memory
+    // Signal that we are completely done with all memory.
+    // audio_stop() will call ndspChnReset(0) after this returns so that
+    // the DSP interrupt fires while our stack is still valid.
     LightEvent_Signal(&s_exit_event);
 }
 
@@ -203,13 +218,21 @@ void audio_stop(void) {
     debug_log("audio_stop: start");
     s_stop_req = true;
 
-    // Unblock httpcDownloadData
+    // Unblock httpcDownloadData if the thread is still downloading
     LightLock_Lock(&s_ctx_lock);
     if (s_ctx) { httpcCloseContext(s_ctx); s_ctx = NULL; }
     LightLock_Unlock(&s_ctx_lock);
 
-    // Wait for thread to signal it's done with ALL memory before we return
+    // Wait for the thread to finish all memory operations and signal us.
+    // The thread does NOT call ndspChnReset — we do it here, after the
+    // thread has exited, so:
+    //   a) no wave buffer submissions can race with the reset, and
+    //   b) any DSP interrupt fired by the reset happens before threadFree,
+    //      so the interrupt handler never runs on a freed stack.
     LightEvent_Wait(&s_exit_event);
+
+    // Safe to reset the channel now: thread is done, stack still live.
+    ndspChnReset(0);
 
     threadJoin(s_thread, U64_MAX);
     threadFree(s_thread);
