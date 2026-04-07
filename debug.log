@@ -1,0 +1,30 @@
+=== Navidrome 3DS ===
+Boot OK
+citro2d OK
+socInit: OK
+httpcInit OK
+ndspInit: OK
+Server: 192.168.1.50:4533
+audio_init: pcm_buf=0x30255c00
+audio_init: 0
+Ping OK, loading artists...
+Artists loaded: 200
+Artist[0]: '"Weird Al" Yankovic' bytes: 22 57 65 69 72 64 20 41 6C 22 20 59 
+Artist[1]: '3rd Prototype' bytes: 33 72 64 20 50 72 6F 74 6F 74 79 70 
+Artist[2]: '3rd Prototype & Emdi' bytes: 33 72 64 20 50 72 6F 74 6F 74 79 70 
+Artist[3]: '8-Bit Misfits' bytes: 38 2D 42 69 74 20 4D 69 73 66 69 74 
+Artist[4]: 'おやすみ世界01 & Hatsune Miku' bytes: E3 81 8A E3 82 84 E3 81 99 E3 81 BF 
+Loading albums for artist: 32sf9bpds6aN0CgE0sc8gk
+Loading tracks for album: 570RdKVHIM31rpmTLuDinO
+Playing: http://192.168.1.50:4533/rest/stream?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml&id=PgAFuYydRzbrQVcj6rkQNt&format=mp3&maxBitRate=128
+audio_available: 1
+mem free: 91524 KB
+linear free: 30345 KB
+audio: thread OK
+audio_play_url rc: 0
+Playback started OK
+audio: HTTP 200
+audio: downloaded 2732430 bytes
+audio: 48000Hz 2ch
+audio_stop: start
+audio: thread exit

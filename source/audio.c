@@ -120,6 +120,10 @@ static void audio_thread(void *arg) {
             if (wb->status == NDSP_WBUF_FREE) break;
             if (wb->status != NDSP_WBUF_DONE) { svcSleepThread(2000000LL); continue; }
 
+            // Belt-and-suspenders: if stop was requested while we slept,
+            // reset the channel so ndspChnWaveBufAdd becomes a no-op.
+            if (s_stop_req) { ndspChnReset(0); break; }
+
             drmp3_uint64 n = drmp3_read_pcm_frames_s16(
                 mp3, BUF_SAMPLES, (drmp3_int16*)wb->data_vaddr);
             if (n == 0) break;
