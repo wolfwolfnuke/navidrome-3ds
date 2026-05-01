@@ -2,6 +2,7 @@
 #include "audio.h"
 #include <3ds.h>
 #include <citro2d.h>
+#include <ctype.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -239,6 +240,47 @@ static void draw_now_playing(const UiState *state) {
 }
 
 // ---------------------------------------------------------------------------
+// Search helpers
+// ---------------------------------------------------------------------------
+
+static int strcasestr_simple(const char *haystack, const char *needle) {
+    if (!needle[0]) return 1;
+    for (const char *h = haystack; *h; h++) {
+        int i = 0;
+        while (needle[i] && h[i] && (tolower(h[i]) == tolower(needle[i]))) i++;
+        if (!needle[i]) return 1;
+    }
+    return 0;
+}
+
+static void filter_artists(const NaviArtistList *src, NaviArtistList *dst, const char *query) {
+    dst->count = 0;
+    for (int i = 0; i < src->count; i++) {
+        if (strcasestr_simple(src->items[i].name, query) || strcasestr_simple(src->items[i].artist, query)) {
+            dst->items[dst->count++] = src->items[i];
+        }
+    }
+}
+
+static void filter_albums(const NaviAlbumList *src, NaviAlbumList *dst, const char *query) {
+    dst->count = 0;
+    for (int i = 0; i < src->count; i++) {
+        if (strcasestr_simple(src->items[i].name, query) || strcasestr_simple(src->items[i].artist, query)) {
+            dst->items[dst->count++] = src->items[i];
+        }
+    }
+}
+
+static void filter_tracks(const NaviTrackList *src, NaviTrackList *dst, const char *query) {
+    dst->count = 0;
+    for (int i = 0; i < src->count; i++) {
+        if (strcasestr_simple(src->items[i].title, query) || strcasestr_simple(src->items[i].artist, query) || strcasestr_simple(src->items[i].album, query)) {
+            dst->items[dst->count++] = src->items[i];
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Public
 // ---------------------------------------------------------------------------
 
@@ -264,28 +306,53 @@ void ui_draw(const UiState *state, C3D_RenderTarget *top, C3D_RenderTarget *bott
     // Build name arrays for the list
     static const char *names[MAX_ITEMS];
 
+    // Draw search bar if active
+    if (state->search_active) {
+        draw_rect(0, 0, BOT_W, 30, COL_HEADER_BG);
+        char bar[80];
+        snprintf(bar, sizeof(bar), "Search: %s", state->search_query);
+        draw_text(8, 20, 0.55f, COL_ACCENT, bar);
+    }
     switch (state->screen) {
-        case SCREEN_ARTISTS:
-            for (int i = 0; i < state->artists.count; i++)
-                names[i] = state->artists.items[i].name;
-            draw_list(names, state->artists.count,
-                      state->selected_artist, state->scroll_offset, "Artists");
+        case SCREEN_ARTISTS: {
+            NaviArtistList filtered;
+            const NaviArtistList *src = &state->artists;
+            if (state->search_active && state->search_type == 0 && state->search_query[0]) {
+                filter_artists(&state->artists, &filtered, state->search_query);
+                src = &filtered;
+            }
+            for (int i = 0; i < src->count; i++)
+                names[i] = src->items[i].name;
+            draw_list(names, src->count,
+                      state->selected_artist, state->scroll_offset, state->search_active ? "Artists (Search)" : "Artists");
             break;
-
-        case SCREEN_ALBUMS:
-            for (int i = 0; i < state->albums.count; i++)
-                names[i] = state->albums.items[i].name;
-            draw_list(names, state->albums.count,
-                      state->selected_album, state->scroll_offset, "Albums");
+        }
+        case SCREEN_ALBUMS: {
+            NaviAlbumList filtered;
+            const NaviAlbumList *src = &state->albums;
+            if (state->search_active && state->search_type == 1 && state->search_query[0]) {
+                filter_albums(&state->albums, &filtered, state->search_query);
+                src = &filtered;
+            }
+            for (int i = 0; i < src->count; i++)
+                names[i] = src->items[i].name;
+            draw_list(names, src->count,
+                      state->selected_album, state->scroll_offset, state->search_active ? "Albums (Search)" : "Albums");
             break;
-
-        case SCREEN_TRACKS:
-            for (int i = 0; i < state->tracks.count; i++)
-                names[i] = state->tracks.items[i].title;
-            draw_list(names, state->tracks.count,
-                      state->selected_track, state->scroll_offset, "Tracks");
+        }
+        case SCREEN_TRACKS: {
+            NaviTrackList filtered;
+            const NaviTrackList *src = &state->tracks;
+            if (state->search_active && state->search_type == 2 && state->search_query[0]) {
+                filter_tracks(&state->tracks, &filtered, state->search_query);
+                src = &filtered;
+            }
+            for (int i = 0; i < src->count; i++)
+                names[i] = src->items[i].title;
+            draw_list(names, src->count,
+                      state->selected_track, state->scroll_offset, state->search_active ? "Tracks (Search)" : "Tracks");
             break;
-
+        }
         case SCREEN_PLAYER:
             draw_text(8, 50, 0.5f, COL_TEXT,  "Playback controls:");
             draw_text(8, 80, 0.45f, COL_DIM,  "START  - Pause / Resume");
@@ -296,11 +363,85 @@ void ui_draw(const UiState *state, C3D_RenderTarget *top, C3D_RenderTarget *bott
     }
 }
 
+// --- Search input helpers ---
+void ui_search_activate(UiState *state, int type) {
+    state->search_active = 1;
+    state->search_type = type;
+    state->search_query[0] = '\0';
+    state->scroll_offset = 0;
+}
+void ui_search_deactivate(UiState *state) {
+    state->search_active = 0;
+    state->search_query[0] = '\0';
+    state->scroll_offset = 0;
+}
+void ui_search_input(UiState *state, char c) {
+    size_t len = strlen(state->search_query);
+    if (len < sizeof(state->search_query) - 1) {
+        state->search_query[len] = c;
+        state->search_query[len+1] = '\0';
+        state->scroll_offset = 0;
+    }
+}
+void ui_search_backspace(UiState *state) {
+    size_t len = strlen(state->search_query);
+    if (len > 0) {
+        state->search_query[len-1] = '\0';
+        state->scroll_offset = 0;
+    }
+}
+void ui_search_apply(UiState *state) {
+    state->scroll_offset = 0;
+}
+void ui_search_clear(UiState *state) {
+    state->search_query[0] = '\0';
+    state->scroll_offset = 0;
+}
+
 bool ui_handle_input(UiState *state) {
     hidScanInput();
     u32 down  = hidKeysDown();
     u32 held  = hidKeysHeld();
-    (void)held;
+    static u32 repeat_timer = 0;
+    static u32 last_held = 0;
+
+    // --- Search input mode ---
+    if (state->search_active) {
+        // Accept text input (A-Z, 0-9, space, backspace, etc.)
+        // For demo: use X to exit search, Y to clear, A to apply, B to backspace
+        if (down & KEY_X) { ui_search_deactivate(state); return false; }
+        if (down & KEY_Y) { ui_search_clear(state); return false; }
+        if (down & KEY_A) { ui_search_apply(state); return false; }
+        if (down & KEY_B) { ui_search_backspace(state); return false; }
+        // Use 3DS software keyboard for input
+        SwkbdState swkbd;
+        char kbdout[64] = {0};
+        swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 1, sizeof(kbdout)-1);
+        swkbdSetHintText(&swkbd, "Enter search query");
+        if (swkbdInputText(&swkbd, kbdout, sizeof(kbdout)) == SWKBD_BUTTON_CONFIRM) {
+            strncpy(state->search_query, kbdout, sizeof(state->search_query)-1);
+            state->search_query[sizeof(state->search_query)-1] = '\0';
+            state->scroll_offset = 0;
+        }
+        ui_search_deactivate(state);
+        return false;
+    }
+
+    // Key repeat logic (simple, per frame)
+    if (held & (KEY_DUP | KEY_DDOWN)) {
+        if (last_held != held) {
+            repeat_timer = 0; // reset on new press
+        } else {
+            repeat_timer++;
+        }
+        // After initial delay, treat as repeated press every 4 frames
+        if (repeat_timer == 15 || (repeat_timer > 15 && (repeat_timer % 4 == 0))) {
+            down |= held & (KEY_DUP | KEY_DDOWN);
+        }
+    } else {
+        repeat_timer = 0;
+    }
+    last_held = held;
 
     int *sel = NULL;
     int  max = 0;
@@ -331,6 +472,10 @@ bool ui_handle_input(UiState *state) {
             if (*sel >= state->scroll_offset + VISIBLE_ROWS)
                 state->scroll_offset = *sel - VISIBLE_ROWS + 1;
         }
+        // Start search: L = artist, R = album, START = track
+        if (down & KEY_L) { ui_search_activate(state, 0); return false; }
+        if (down & KEY_R) { ui_search_activate(state, 1); return false; }
+        if (down & KEY_START) { ui_search_activate(state, 2); return false; }
     }
 
     if (down & KEY_A) {
