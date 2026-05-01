@@ -1,6 +1,6 @@
-audio.o: /var/home/wolfie/navidrome-3ds/source/audio.c \
- /var/home/wolfie/navidrome-3ds/source/audio.h \
- /var/home/wolfie/navidrome-3ds/source/debug.h \
+audio.o: /workspaces/navidrome-3ds/source/audio.c \
+ /workspaces/navidrome-3ds/source/audio.h \
+ /workspaces/navidrome-3ds/source/debug.h \
  /opt/devkitpro/libctru/include/3ds.h \
  /opt/devkitpro/libctru/include/3ds/types.h \
  /opt/devkitpro/libctru/include/3ds/result.h \
@@ -88,9 +88,9 @@ audio.o: /var/home/wolfie/navidrome-3ds/source/audio.c \
  /opt/devkitpro/libctru/include/3ds/font.h \
  /opt/devkitpro/libctru/include/3ds/gdbhio_dev.h \
  /opt/devkitpro/libctru/include/3ds/3dslink.h \
- /var/home/wolfie/navidrome-3ds/source/dr_mp3.h
-/var/home/wolfie/navidrome-3ds/source/audio.h:
-/var/home/wolfie/navidrome-3ds/source/debug.h:
+ /workspaces/navidrome-3ds/source/dr_mp3.h
+/workspaces/navidrome-3ds/source/audio.h:
+/workspaces/navidrome-3ds/source/debug.h:
 /opt/devkitpro/libctru/include/3ds.h:
 /opt/devkitpro/libctru/include/3ds/types.h:
 /opt/devkitpro/libctru/include/3ds/result.h:
@@ -178,4 +178,4 @@ audio.o: /var/home/wolfie/navidrome-3ds/source/audio.c \
 /opt/devkitpro/libctru/include/3ds/font.h:
 /opt/devkitpro/libctru/include/3ds/gdbhio_dev.h:
 /opt/devkitpro/libctru/include/3ds/3dslink.h:
-/var/home/wolfie/navidrome-3ds/source/dr_mp3.h:
+/workspaces/navidrome-3ds/source/dr_mp3.h:

@@ -1,6 +1,6 @@
-api.o: /var/home/wolfie/navidrome-3ds/source/api.c \
- /var/home/wolfie/navidrome-3ds/source/api.h \
- /var/home/wolfie/navidrome-3ds/source/config.h \
+api.o: /workspaces/navidrome-3ds/source/api.c \
+ /workspaces/navidrome-3ds/source/api.h \
+ /workspaces/navidrome-3ds/source/config.h \
  /opt/devkitpro/portlibs/3ds/include/curl/curl.h \
  /opt/devkitpro/portlibs/3ds/include/curl/curlver.h \
  /opt/devkitpro/portlibs/3ds/include/curl/system.h \
@@ -13,8 +13,8 @@ api.o: /var/home/wolfie/navidrome-3ds/source/api.c \
  /opt/devkitpro/portlibs/3ds/include/curl/header.h \
  /opt/devkitpro/portlibs/3ds/include/curl/websockets.h \
  /opt/devkitpro/portlibs/3ds/include/curl/typecheck-gcc.h
-/var/home/wolfie/navidrome-3ds/source/api.h:
-/var/home/wolfie/navidrome-3ds/source/config.h:
+/workspaces/navidrome-3ds/source/api.h:
+/workspaces/navidrome-3ds/source/config.h:
 /opt/devkitpro/portlibs/3ds/include/curl/curl.h:
 /opt/devkitpro/portlibs/3ds/include/curl/curlver.h:
 /opt/devkitpro/portlibs/3ds/include/curl/system.h:

@@ -1,7 +1,7 @@
-ui.o: /var/home/wolfie/navidrome-3ds/source/ui.c \
- /var/home/wolfie/navidrome-3ds/source/ui.h \
- /var/home/wolfie/navidrome-3ds/source/api.h \
- /var/home/wolfie/navidrome-3ds/source/config.h \
+ui.o: /workspaces/navidrome-3ds/source/ui.c \
+ /workspaces/navidrome-3ds/source/ui.h \
+ /workspaces/navidrome-3ds/source/api.h \
+ /workspaces/navidrome-3ds/source/config.h \
  /opt/devkitpro/libctru/include/citro2d.h \
  /opt/devkitpro/libctru/include/citro3d.h \
  /opt/devkitpro/libctru/include/c3d/types.h \
@@ -113,10 +113,10 @@ ui.o: /var/home/wolfie/navidrome-3ds/source/ui.c \
  /opt/devkitpro/libctru/include/c2d/sprite.h \
  /opt/devkitpro/libctru/include/c2d/text.h \
  /opt/devkitpro/libctru/include/c2d/font.h \
- /var/home/wolfie/navidrome-3ds/source/audio.h
-/var/home/wolfie/navidrome-3ds/source/ui.h:
-/var/home/wolfie/navidrome-3ds/source/api.h:
-/var/home/wolfie/navidrome-3ds/source/config.h:
+ /workspaces/navidrome-3ds/source/audio.h
+/workspaces/navidrome-3ds/source/ui.h:
+/workspaces/navidrome-3ds/source/api.h:
+/workspaces/navidrome-3ds/source/config.h:
 /opt/devkitpro/libctru/include/citro2d.h:
 /opt/devkitpro/libctru/include/citro3d.h:
 /opt/devkitpro/libctru/include/c3d/types.h:
@@ -228,4 +228,4 @@ ui.o: /var/home/wolfie/navidrome-3ds/source/ui.c \
 /opt/devkitpro/libctru/include/c2d/sprite.h:
 /opt/devkitpro/libctru/include/c2d/text.h:
 /opt/devkitpro/libctru/include/c2d/font.h:
-/var/home/wolfie/navidrome-3ds/source/audio.h:
+/workspaces/navidrome-3ds/source/audio.h:
