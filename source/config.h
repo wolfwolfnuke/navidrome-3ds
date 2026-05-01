@@ -1,6 +1,7 @@
 #pragma once
 
-#define CONFIG_PATH "sdmc:/3ds/navidrome/config.ini"
+#define CONFIG_PATH     "sdmc:/3ds/navidrome/config.ini"
+#define CONFIG_PATH_ALT "/3ds/navidrome/config.ini"
 #define MAX_STR     256
 
 typedef struct {

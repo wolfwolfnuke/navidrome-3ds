@@ -62,7 +62,25 @@ int main(void) {
     if (config_load(&cfg) != 0) {
         config_defaults(&cfg);
         config_save(&cfg);
-        set_status(state, "No config. Edit /3ds/navidrome/config.ini");
+        set_status(state, "Config missing or unreadable. Check /3ds/navidrome/config.ini");
+        debug_log("FATAL: Config missing or unreadable. Exiting.");
+        // Show error for a few seconds, then exit
+        for (int i = 0; i < 180; ++i) { // ~3 seconds at 60fps
+            C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+            C2D_TargetClear(top,    C2D_Color32(0x1a, 0x1a, 0x2e, 0xFF));
+            C2D_TargetClear(bottom, C2D_Color32(0x1a, 0x1a, 0x2e, 0xFF));
+            ui_draw(state, top, bottom);
+            C3D_FrameEnd(0);
+            svcSleepThread(16666666LL); // ~1/60s
+        }
+        debug_cleanup();
+        socExit();
+        httpcExit();
+        romfsExit();
+        C2D_Fini();
+        C3D_Fini();
+        gfxExit();
+        return 1;
     }
     debug_log("Server: %s:%d", cfg.host, cfg.port);
 
