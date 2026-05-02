@@ -40,8 +40,19 @@ int main(void) {
     debug_log("citro2d OK");
 
     debug_log("Creating render targets...");
+    debug_log("[DBG] mem free before targets: %lu KB", (unsigned long)osGetMemRegionFree(MEMREGION_ALL) / 1024);
+    debug_log("[DBG] linear free before targets: %lu KB", (unsigned long)linearSpaceFree() / 1024);
     C3D_RenderTarget *top    = C2D_CreateScreenTarget(GFX_TOP,    GFX_LEFT);
+    debug_log("[DBG] after top target alloc");
     C3D_RenderTarget *bottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
+    debug_log("[DBG] after bottom target alloc");
+    debug_log("[DBG] top target: %p, bottom target: %p", top, bottom);
+    debug_log("[DBG] mem free after targets: %lu KB", (unsigned long)osGetMemRegionFree(MEMREGION_ALL) / 1024);
+    debug_log("[DBG] linear free after targets: %lu KB", (unsigned long)linearSpaceFree() / 1024);
+    if (!top || !bottom) {
+        debug_log("FATAL: Failed to create screen targets: top=%p bottom=%p", top, bottom);
+        return 1;
+    }
 
     debug_log("Initializing networking...");
     Result rc = socInit(soc_buf, SOC_BUFSIZE);
@@ -114,11 +125,21 @@ int main(void) {
 
     debug_log("Showing connecting screen...");
     set_status(state, "Connecting to server...");
+    debug_log("[DBG] About to C3D_FrameBegin");
     C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+    debug_log("[DBG] After C3D_FrameBegin");
+    debug_log("[DBG] About to C2D_TargetClear top");
     C2D_TargetClear(top,    C2D_Color32(0x1a, 0x1a, 0x2e, 0xFF));
+    debug_log("[DBG] After C2D_TargetClear top");
+    debug_log("[DBG] About to C2D_TargetClear bottom");
     C2D_TargetClear(bottom, C2D_Color32(0x1a, 0x1a, 0x2e, 0xFF));
+    debug_log("[DBG] After C2D_TargetClear bottom");
+    debug_log("[DBG] About to ui_draw");
     ui_draw(state, top, bottom);
+    debug_log("[DBG] After ui_draw");
+    debug_log("[DBG] About to C3D_FrameEnd");
     C3D_FrameEnd(0);
+    debug_log("[AFTER] C3D_FrameEnd connecting screen");
 
     debug_log("Pinging server...");
     if (api_ping() != 0) {

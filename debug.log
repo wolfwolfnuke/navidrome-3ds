@@ -1,0 +1,58 @@
+=== Navidrome 3DS ===
+Boot OK
+Initializing citro3d/citro2d...
+citro2d OK
+Creating render targets...
+[DBG] mem free before targets: 91548 KB
+[DBG] linear free before targets: 30377 KB
+[DBG] after top target alloc
+[DBG] after bottom target alloc
+[DBG] top target: 0x800c860, bottom target: 0x800c8e0
+[DBG] mem free after targets: 91548 KB
+[DBG] linear free after targets: 30377 KB
+Initializing networking...
+socInit: OK
+httpcInit OK
+Initializing audio subsystem...
+ndspInit: OK
+Allocating UI state...
+UiState allocation OK: 0x801a9b0
+Initializing UI...
+[ENTER] ui_init()
+[UI] fonts_init called
+[UI] Loaded standard font, count=0
+[UI] fonts_init complete, total fonts=0
+Loading config...
+Before config_load: state=0x801a9b0
+[CONFIG] config_load called
+[CONFIG] config_defaults called
+[CONFIG] config_defaults set host=192.168.1.100, port=4533, user=admin
+[CONFIG] config_load: parsed key=host, val=192.168.1.50
+[CONFIG] config_load: set host=192.168.1.50
+[CONFIG] config_load: parsed key=port, val=4533
+[CONFIG] config_load: set port=4533
+[CONFIG] config_load: parsed key=username, val=wolfwolfnuke
+[CONFIG] config_load: set username=wolfwolfnuke
+[CONFIG] config_load: parsed key=password, val=apple95
+[CONFIG] config_load: set password=***
+[CONFIG] config_load complete: host=192.168.1.50, port=4533, user=wolfwolfnuke
+Server: 192.168.1.50:4533
+Initializing API and audio...
+Before api_init: state=0x801a9b0
+[ENTER] api_init()
+[API] Initializing with host=192.168.1.50, port=4533, user=wolfwolfnuke
+[API] curl_global_init complete
+Calling audio_init...
+[ENTER] audio_init()
+audio_init: pcm_buf=0x30255c00
+audio_init: thread stack 1024 KB
+[EXIT] audio_init() rc=0
+audio_init: 0
+Showing connecting screen...
+[DBG] About to C3D_FrameBegin
+[DBG] After C3D_FrameBegin
+[DBG] About to C2D_TargetClear top
+[DBG] After C2D_TargetClear top
+[DBG] About to C2D_TargetClear bottom
+[DBG] After C2D_TargetClear bottom
+[DBG] About to ui_draw

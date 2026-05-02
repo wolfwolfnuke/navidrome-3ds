@@ -4,6 +4,7 @@
 #include <3ds.h>
 #include <citro2d.h>
 #include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -54,6 +55,7 @@ static void fonts_init(void) {
     // Always load the standard font first
     s_fonts[s_font_count] = C2D_FontLoadSystem(CFG_REGION_USA);
     if (s_fonts[s_font_count]) s_font_count++;
+    else debug_log("[UI] ERROR: Failed to load standard system font (CFG_REGION_USA)");
     debug_log("[UI] Loaded standard font, count=%d", s_font_count);
 
     // Load CJK fonts
@@ -299,6 +301,23 @@ static void filter_tracks(const NaviTrackList *src, NaviTrackList *dst, const ch
 // ---------------------------------------------------------------------------
 
 void ui_draw(const UiState *state, C3D_RenderTarget *top, C3D_RenderTarget *bottom) {
+    if (s_font_count == 0) {
+        debug_log("FATAL: No system fonts loaded. Skipping UI draw and exiting.");
+        // Show a blank screen and exit gracefully
+        C2D_SceneBegin(top);
+        C2D_TargetClear(top, C2D_Color32(0,0,0,0xFF));
+        C2D_SceneBegin(bottom);
+        C2D_TargetClear(bottom, C2D_Color32(0,0,0,0xFF));
+        C3D_FrameEnd(0);
+        debug_cleanup();
+        socExit();
+        httpcExit();
+        romfsExit();
+        C2D_Fini();
+        C3D_Fini();
+        gfxExit();
+        exit(1);
+    }
     // --- Top screen ---
     C2D_SceneBegin(top);
     draw_now_playing(state);
