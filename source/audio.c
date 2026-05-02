@@ -67,14 +67,23 @@ static char          s_url[1024] = {0};
 // ---------------------------------------------------------------------------
 
 static void plant_stack_canary(void) {
-    if (!s_thread_stack) return;
+    debug_log("[AUDIO] plant_stack_canary called");
+    if (!s_thread_stack) {
+        debug_log("[AUDIO] s_thread_stack is NULL in plant_stack_canary");
+        return;
+    }
     u32 *p = (u32 *)s_thread_stack;
     for (int i = 0; i < STACK_CANARY_WORDS; i++)
         p[i] = STACK_CANARY_VALUE;
+    debug_log("[AUDIO] Stack canary planted");
 }
 
 static void check_stack_canary(void) {
-    if (!s_thread_stack) return;
+    debug_log("[AUDIO] check_stack_canary called");
+    if (!s_thread_stack) {
+        debug_log("[AUDIO] s_thread_stack is NULL in check_stack_canary");
+        return;
+    }
     int first_bad = -1;
     u32 *p = (u32 *)s_thread_stack;
     for (int i = 0; i < STACK_CANARY_WORDS; i++) {
@@ -88,6 +97,7 @@ static void check_stack_canary(void) {
         debug_log("audio: stack canary OK (bottom %d words intact, ~%u KB margin)",
                   STACK_CANARY_WORDS,
                   AUDIO_THREAD_STACK_SIZE / 1024);
+    debug_log("[AUDIO] check_stack_canary complete");
 }
 
 // ---------------------------------------------------------------------------
@@ -248,6 +258,7 @@ done:
 // ---------------------------------------------------------------------------
 
 int audio_init(void) {
+    debug_log("[ENTER] audio_init()");
     LightLock_Init(&s_ctx_lock);
     LightEvent_Init(&s_exit_event, RESET_ONESHOT);
     ndspSetOutputMode(NDSP_OUTPUT_STEREO);
@@ -256,10 +267,13 @@ int audio_init(void) {
     s_pcm_buf = (s16*)linearAlloc(BUF_SIZE * NUM_BUFS);
     debug_log("audio_init: pcm_buf=%p", s_pcm_buf);
     debug_log("audio_init: thread stack %u KB", AUDIO_THREAD_STACK_SIZE / 1024);
-    return s_pcm_buf ? 0 : -1;
+    int rc = s_pcm_buf ? 0 : -1;
+    debug_log("[EXIT] audio_init() rc=%d", rc);
+    return rc;
 }
 
 void audio_cleanup(void) {
+    debug_log("[ENTER] audio_cleanup()");
     audio_stop();
     if (s_pcm_buf)      { linearFree(s_pcm_buf);      s_pcm_buf      = NULL; }
     if (s_thread_stack) { free(s_thread_stack);        s_thread_stack = NULL; }

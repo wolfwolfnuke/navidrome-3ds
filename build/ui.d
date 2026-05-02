@@ -113,6 +113,7 @@ ui.o: /workspaces/navidrome-3ds/source/ui.c \
  /opt/devkitpro/libctru/include/c2d/sprite.h \
  /opt/devkitpro/libctru/include/c2d/text.h \
  /opt/devkitpro/libctru/include/c2d/font.h \
+ /workspaces/navidrome-3ds/source/debug.h \
  /workspaces/navidrome-3ds/source/audio.h
 /workspaces/navidrome-3ds/source/ui.h:
 /workspaces/navidrome-3ds/source/api.h:
@@ -228,4 +229,5 @@ ui.o: /workspaces/navidrome-3ds/source/ui.c \
 /opt/devkitpro/libctru/include/c2d/sprite.h:
 /opt/devkitpro/libctru/include/c2d/text.h:
 /opt/devkitpro/libctru/include/c2d/font.h:
+/workspaces/navidrome-3ds/source/debug.h:
 /workspaces/navidrome-3ds/source/audio.h:

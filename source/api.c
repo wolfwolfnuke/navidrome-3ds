@@ -1,4 +1,5 @@
 #include "api.h"
+#include "debug.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -58,8 +59,12 @@ static void buf_free(Buffer *b) {
 // Perform a GET request, return HTTP status code (0 on curl error)
 // ---------------------------------------------------------------------------
 static int http_get(const char *url, Buffer *out) {
+    debug_log("[API] http_get called: url=%s", url);
     CURL *curl = curl_easy_init();
-    if (!curl) return 0;
+    if (!curl) {
+        debug_log("[API] curl_easy_init failed");
+        return 0;
+    }
 
     curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
@@ -69,12 +74,18 @@ static int http_get(const char *url, Buffer *out) {
     // Accept self-signed certs on local network (set to 1L for strict)
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 
+    debug_log("[API] Performing curl_easy_perform...");
     CURLcode res = curl_easy_perform(curl);
     long http_code = 0;
-    if (res == CURLE_OK)
+    if (res == CURLE_OK) {
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+        debug_log("[API] HTTP response code: %ld", http_code);
+    } else {
+        debug_log("[API] curl_easy_perform error: %d", res);
+    }
 
     curl_easy_cleanup(curl);
+    debug_log("[API] http_get finished: url=%s, code=%ld", url, http_code);
     return (int)http_code;
 }
 
@@ -163,34 +174,49 @@ static const char *xml_next_tag(const char *xml, const char *tag) {
 // ---------------------------------------------------------------------------
 
 void api_init(const NaviConfig *cfg) {
+    debug_log("[ENTER] api_init()");
+    debug_log("[API] Initializing with host=%s, port=%d, user=%s", cfg->host, cfg->port, cfg->username);
     g_cfg = *cfg;
     snprintf(g_base_url, sizeof(g_base_url),
              "http://%s:%d", cfg->host, cfg->port);
     curl_global_init(CURL_GLOBAL_DEFAULT);
+    debug_log("[API] curl_global_init complete");
 }
 
 void api_cleanup(void) {
+    debug_log("[API] Cleaning up curl global state");
     curl_global_cleanup();
+    debug_log("[API] Cleanup complete");
 }
 
 int api_ping(void) {
+    debug_log("[API] api_ping called");
     char url[2048];
     build_url(url, sizeof(url), "ping", NULL);
+    debug_log("[API] Ping URL: %s", url);
 
     Buffer buf = buf_new();
     int code = http_get(url, &buf);
+    debug_log("[API] Ping HTTP code: %d", code);
     int ok = (code == 200 && buf.data && strstr(buf.data, "status=\"ok\""));
+    debug_log("[API] Ping response: %s", buf.data ? buf.data : "(null)");
     buf_free(&buf);
+    debug_log("[API] api_ping returning %d", ok ? 0 : -1);
     return ok ? 0 : -1;
 }
 
 int api_get_artists(NaviArtistList *out) {
+    debug_log("[API] api_get_artists called");
     out->count = 0;
     char url[2048];
     build_url(url, sizeof(url), "getArtists", NULL);
+    debug_log("[API] getArtists URL: %s", url);
 
     Buffer buf = buf_new();
-    if (http_get(url, &buf) != 200 || !buf.data) {
+    int http_code = http_get(url, &buf);
+    debug_log("[API] getArtists HTTP code: %d", http_code);
+    if (http_code != 200 || !buf.data) {
+        debug_log("[API] getArtists failed, buf.data=%p", buf.data);
         buf_free(&buf);
         return -1;
     }
@@ -204,11 +230,13 @@ int api_get_artists(NaviArtistList *out) {
         NaviArtist *a = &out->items[out->count];
         const char *after = xml_attr(p, "id",   a->id,   MAX_ID_LEN);
         if (after) xml_attr(p, "name", a->name, MAX_NAME_LEN);
+        debug_log("[API] Parsed artist: id=%s, name=%s", a->id, a->name);
 
         if (a->id[0] && a->name[0]) out->count++;
         p++; // advance so we don't match same tag
     }
 
+    debug_log("[API] api_get_artists loaded %d artists", out->count);
     buf_free(&buf);
     return 0;
 }

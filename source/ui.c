@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "debug.h"
 #include "audio.h"
 #include <3ds.h>
 #include <citro2d.h>
@@ -49,20 +50,26 @@ static const CFG_Region s_font_regions[] = {
 };
 
 static void fonts_init(void) {
+    debug_log("[UI] fonts_init called");
     // Always load the standard font first
     s_fonts[s_font_count] = C2D_FontLoadSystem(CFG_REGION_USA);
     if (s_fonts[s_font_count]) s_font_count++;
+    debug_log("[UI] Loaded standard font, count=%d", s_font_count);
 
     // Load CJK fonts
     for (size_t i = 1; i < sizeof(s_font_regions)/sizeof(s_font_regions[0]); i++) {
         C2D_Font f = C2D_FontLoadSystem(s_font_regions[i]);
         if (f && s_font_count < MAX_FONTS) {
             s_fonts[s_font_count++] = f;
+            debug_log("[UI] Loaded CJK font region %d, count=%d", (int)i, s_font_count);
         }
     }
+    debug_log("[UI] fonts_init complete, total fonts=%d", s_font_count);
 }
 
 static void fonts_cleanup(void) {
+    debug_log("[ENTER] fonts_cleanup()");
+    debug_log("[ENTER] fonts_cleanup()");
     for (int i = 0; i < s_font_count; i++) {
         if (s_fonts[i]) C2D_FontFree(s_fonts[i]);
         s_fonts[i] = NULL;
@@ -99,7 +106,11 @@ static uint32_t utf8_next(const char **str) {
 // draw_text: renders UTF-8 string using system fonts for full CJK support
 // ---------------------------------------------------------------------------
 static void draw_text(float x, float y, float sz, u32 color, const char *str) {
-    if (!str || !str[0]) return;
+    debug_log("[UI] draw_text called: x=%.2f, y=%.2f, sz=%.2f, color=0x%08X, str=%.32s", x, y, sz, color, str ? str : "(null)");
+    if (!str || !str[0]) {
+        debug_log("[UI] draw_text: empty or null string");
+        return;
+    }
 
     // Build a segment list: split the string into runs, each rendered
     // with the first font that contains the glyph.
@@ -142,6 +153,7 @@ static void draw_text(float x, float y, float sz, u32 color, const char *str) {
             C2D_TextGetDimensions(&txt, sz, sz, &tw, &th);
             C2D_DrawText(&txt, C2D_WithColor | C2D_AtBaseline,
                          cur_x, y, 0.5f, sz, sz, color);
+            debug_log("[UI] draw_text: drew segment '%s' with font %d at x=%.2f", seg, seg_font, cur_x);
             cur_x += tw;
             seg_len = 0;
         }
@@ -163,7 +175,9 @@ static void draw_text(float x, float y, float sz, u32 color, const char *str) {
         C2D_TextOptimize(&txt);
         C2D_DrawText(&txt, C2D_WithColor | C2D_AtBaseline,
                      cur_x, y, 0.5f, sz, sz, color);
+        debug_log("[UI] draw_text: drew final segment '%s' with font %d at x=%.2f", seg, seg_font, cur_x);
     }
+    debug_log("[UI] draw_text complete");
 }
 
 static void draw_rect(float x, float y, float w, float h, u32 color) {
@@ -526,11 +540,14 @@ bool ui_handle_input(UiState *state) {
 }
 
 void ui_init(void) {
+    debug_log("[ENTER] ui_init()");
     s_tbuf = C2D_TextBufNew(8192);
     fonts_init();
 }
 
 void ui_cleanup(void) {
+    debug_log("[ENTER] ui_cleanup()");
+    debug_log("[ENTER] ui_cleanup()");
     fonts_cleanup();
     C2D_TextBufDelete(s_tbuf);
 }
