@@ -50,15 +50,20 @@ int main(void) {
     rc = ndspInit();
     bool audio_available = R_SUCCEEDED(rc);
     debug_log("ndspInit: %s", audio_available ? "OK" : "FAIL");
+    if (!audio_available) {
+        debug_log("WARNING: DSP unavailable, running in no-audio mode");
+    }
 
     // ---- UI state (heap allocated) ----
     UiState *state = (UiState *)calloc(1, sizeof(UiState));
-    if (!state) { gfxExit(); return 1; }
+    if (!state) { debug_log("FATAL: UiState allocation failed"); gfxExit(); return 1; }
+    debug_log("UiState allocation OK: %p", state);
     state->screen = SCREEN_ARTISTS;
     ui_init();
 
     // ---- Config ----
     NaviConfig cfg;
+    debug_log("Before config_load: state=%p", state);
     if (config_load(&cfg) != 0) {
         config_defaults(&cfg);
         config_save(&cfg);
@@ -85,11 +90,14 @@ int main(void) {
     debug_log("Server: %s:%d", cfg.host, cfg.port);
 
     // ---- API + Audio ----
+    debug_log("Before api_init: state=%p", state);
     api_init(&cfg);
     if (audio_available) {
         int ainit = audio_init();
         debug_log("audio_init: %d", ainit);
         if (ainit != 0) audio_available = false;
+    } else {
+        set_status(state, "Audio unavailable (DSP not present)");
     }
 
     // ---- Show connecting screen ----
