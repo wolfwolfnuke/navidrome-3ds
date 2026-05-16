@@ -24,6 +24,8 @@ navidrome-3ds/
 - A running Navidrome server accessible on your local network
 - A New 3DS (or Old 3DS, but playback is smoother on New 3DS)
 - Custom firmware (Luma3DS) with homebrew enabled
+- install with https://devkitpro.org/wiki/Getting_Started and sudo dkp-pacman -S 3ds-dev 3ds-mbedtls 3ds-curl
+
 
 ## Building
 
