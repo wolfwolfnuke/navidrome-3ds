@@ -1,5 +1,5 @@
-config.o: /workspaces/navidrome-3ds/source/config.c \
- /workspaces/navidrome-3ds/source/config.h \
- /workspaces/navidrome-3ds/source/debug.h
-/workspaces/navidrome-3ds/source/config.h:
-/workspaces/navidrome-3ds/source/debug.h:
+config.o: /home/sam/Documents/GitHub/navidrome-3ds/source/config.c \
+ /home/sam/Documents/GitHub/navidrome-3ds/source/config.h \
+ /home/sam/Documents/GitHub/navidrome-3ds/source/debug.h
+/home/sam/Documents/GitHub/navidrome-3ds/source/config.h:
+/home/sam/Documents/GitHub/navidrome-3ds/source/debug.h:

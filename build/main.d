@@ -1,4 +1,4 @@
-main.o: /workspaces/navidrome-3ds/source/main.c \
+main.o: /home/sam/Documents/GitHub/navidrome-3ds/source/main.c \
  /opt/devkitpro/libctru/include/3ds.h \
  /opt/devkitpro/libctru/include/3ds/types.h \
  /opt/devkitpro/libctru/include/3ds/result.h \
@@ -110,11 +110,11 @@ main.o: /workspaces/navidrome-3ds/source/main.c \
  /opt/devkitpro/libctru/include/c2d/sprite.h \
  /opt/devkitpro/libctru/include/c2d/text.h \
  /opt/devkitpro/libctru/include/c2d/font.h \
- /workspaces/navidrome-3ds/source/config.h \
- /workspaces/navidrome-3ds/source/api.h \
- /workspaces/navidrome-3ds/source/audio.h \
- /workspaces/navidrome-3ds/source/ui.h \
- /workspaces/navidrome-3ds/source/debug.h
+ /home/sam/Documents/GitHub/navidrome-3ds/source/config.h \
+ /home/sam/Documents/GitHub/navidrome-3ds/source/api.h \
+ /home/sam/Documents/GitHub/navidrome-3ds/source/audio.h \
+ /home/sam/Documents/GitHub/navidrome-3ds/source/ui.h \
+ /home/sam/Documents/GitHub/navidrome-3ds/source/debug.h
 /opt/devkitpro/libctru/include/3ds.h:
 /opt/devkitpro/libctru/include/3ds/types.h:
 /opt/devkitpro/libctru/include/3ds/result.h:
@@ -226,8 +226,8 @@ main.o: /workspaces/navidrome-3ds/source/main.c \
 /opt/devkitpro/libctru/include/c2d/sprite.h:
 /opt/devkitpro/libctru/include/c2d/text.h:
 /opt/devkitpro/libctru/include/c2d/font.h:
-/workspaces/navidrome-3ds/source/config.h:
-/workspaces/navidrome-3ds/source/api.h:
-/workspaces/navidrome-3ds/source/audio.h:
-/workspaces/navidrome-3ds/source/ui.h:
-/workspaces/navidrome-3ds/source/debug.h:
+/home/sam/Documents/GitHub/navidrome-3ds/source/config.h:
+/home/sam/Documents/GitHub/navidrome-3ds/source/api.h:
+/home/sam/Documents/GitHub/navidrome-3ds/source/audio.h:
+/home/sam/Documents/GitHub/navidrome-3ds/source/ui.h:
+/home/sam/Documents/GitHub/navidrome-3ds/source/debug.h:

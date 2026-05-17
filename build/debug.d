@@ -1,5 +1,5 @@
-debug.o: /workspaces/navidrome-3ds/source/debug.c \
- /workspaces/navidrome-3ds/source/debug.h \
+debug.o: /home/sam/Documents/GitHub/navidrome-3ds/source/debug.c \
+ /home/sam/Documents/GitHub/navidrome-3ds/source/debug.h \
  /opt/devkitpro/libctru/include/3ds.h \
  /opt/devkitpro/libctru/include/3ds/types.h \
  /opt/devkitpro/libctru/include/3ds/result.h \
@@ -87,7 +87,7 @@ debug.o: /workspaces/navidrome-3ds/source/debug.c \
  /opt/devkitpro/libctru/include/3ds/font.h \
  /opt/devkitpro/libctru/include/3ds/gdbhio_dev.h \
  /opt/devkitpro/libctru/include/3ds/3dslink.h
-/workspaces/navidrome-3ds/source/debug.h:
+/home/sam/Documents/GitHub/navidrome-3ds/source/debug.h:
 /opt/devkitpro/libctru/include/3ds.h:
 /opt/devkitpro/libctru/include/3ds/types.h:
 /opt/devkitpro/libctru/include/3ds/result.h:

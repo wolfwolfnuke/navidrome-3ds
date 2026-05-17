@@ -52,20 +52,23 @@ static const CFG_Region s_font_regions[] = {
 
 static void fonts_init(void) {
     debug_log("[UI] fonts_init called");
-    // Always load the standard font first
+    // Try to load the standard system font first
     s_fonts[s_font_count] = C2D_FontLoadSystem(CFG_REGION_USA);
-    if (s_fonts[s_font_count]) s_font_count++;
-    else debug_log("[UI] ERROR: Failed to load standard system font (CFG_REGION_USA)");
-    debug_log("[UI] Loaded standard font, count=%d", s_font_count);
-
-    // Load CJK fonts
-    for (size_t i = 1; i < sizeof(s_font_regions)/sizeof(s_font_regions[0]); i++) {
-        C2D_Font f = C2D_FontLoadSystem(s_font_regions[i]);
-        if (f && s_font_count < MAX_FONTS) {
-            s_fonts[s_font_count++] = f;
-            debug_log("[UI] Loaded CJK font region %d, count=%d", (int)i, s_font_count);
+    if (s_fonts[s_font_count]) {
+        s_font_count++;
+        debug_log("[UI] Loaded system font");
+    } else {
+        debug_log("[UI] ERROR: Failed to load standard system font (CFG_REGION_USA), trying fallback .bcfnt from romfs");
+        // Fallback: load bundled font from romfs
+        C2D_Font fallback = C2D_FontLoad("romfs:/popjoy.bcfnt");
+        if (fallback) {
+            s_fonts[s_font_count++] = fallback;
+            debug_log("[UI] Loaded fallback font from romfs/popjoy.bcfnt");
+        } else {
+            debug_log("[UI] FATAL: No fonts available at all!");
         }
     }
+    // Optionally try to load CJK fonts if you have them bundled as .bcfnt files
     debug_log("[UI] fonts_init complete, total fonts=%d", s_font_count);
 }
 
@@ -182,6 +185,41 @@ static void draw_text(float x, float y, float sz, u32 color, const char *str) {
     debug_log("[UI] draw_text complete");
 }
 
+// ---------------------------------------------------------------------------
+// Checkbox helpers — drawn in the search bar
+// ---------------------------------------------------------------------------
+#define CHECKBOX_X_START  8
+#define CHECKBOX_Y        34
+#define CHECKBOX_W        48
+#define CHECKBOX_H        16
+#define CHECKBOX_GAP      8
+
+// Checkbox field indices: 0=name/title, 1=artist, 2=album
+static const char *s_checkbox_labels[] = { "Name", "Artist", "Album" };
+static const int   s_checkbox_bits[]   = { 1, 2, 4 };
+#define NUM_CHECKBOXES 3
+
+// Returns checkbox index if touched, -1 otherwise
+static int hit_test_checkboxes(touchPosition touch) {
+    for (int i = 0; i < NUM_CHECKBOXES; i++) {
+        float x = CHECKBOX_X_START + i * (CHECKBOX_W + CHECKBOX_GAP);
+        float y = CHECKBOX_Y;
+        if (touch.px >= (int)x && touch.px < (int)(x + CHECKBOX_W) &&
+            touch.py >= (int)y && touch.py < (int)(y + CHECKBOX_H)) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// Toggle a filter field by index (0=name, 1=artist, 2=album)
+void ui_search_toggle_field(UiState *state, int field_idx) {
+    if (field_idx < 0 || field_idx >= NUM_CHECKBOXES) return;
+    int bit = s_checkbox_bits[field_idx];
+    state->filter_fields ^= bit;
+    state->scroll_offset = 0;
+}
+
 static void draw_rect(float x, float y, float w, float h, u32 color) {
     C2D_DrawRectSolid(x, y, 0.0f, w, h, color);
 }
@@ -256,7 +294,13 @@ static void draw_now_playing(const UiState *state) {
 }
 
 // ---------------------------------------------------------------------------
-// Search helpers
+// Search helpers — unified filter with per-field checkboxes
+// ---------------------------------------------------------------------------
+// filter_fields bitmask:
+//   bit 0 (1) = search name / title
+//   bit 1 (2) = search artist
+//   bit 2 (4) = search album
+// If no bits are set, all fields are searched (backward-compatible default).
 // ---------------------------------------------------------------------------
 
 static int strcasestr_simple(const char *haystack, const char *needle) {
@@ -269,28 +313,70 @@ static int strcasestr_simple(const char *haystack, const char *needle) {
     return 0;
 }
 
-static void filter_artists(const NaviArtistList *src, NaviArtistList *dst, const char *query) {
+static int match_field(const char *field, const char *query, int field_bit, int filter_fields) {
+    // If no filter bits set, match everything (all fields active)
+    if (filter_fields == 0) return 1;
+    // If this field's bit is set, check it
+    if (filter_fields & field_bit) {
+        return strcasestr_simple(field, query);
+    }
+    // Field not in filter — skip it
+    return 0;
+}
+
+static int artist_matches(const NaviArtist *a, const char *query, int filter_fields) {
+    int name_ok = match_field(a->name, query, 1, filter_fields);
+    int artist_ok = match_field(a->artist, query, 2, filter_fields);
+    return name_ok || artist_ok;
+}
+
+static int album_matches(const NaviAlbum *a, const char *query, int filter_fields) {
+    int name_ok = match_field(a->name, query, 1, filter_fields);
+    int artist_ok = match_field(a->artist, query, 2, filter_fields);
+    return name_ok || artist_ok;
+}
+
+static int track_matches(const NaviTrack *t, const char *query, int filter_fields) {
+    int title_ok = match_field(t->title, query, 1, filter_fields);
+    int artist_ok = match_field(t->artist, query, 2, filter_fields);
+    int album_ok = match_field(t->album, query, 4, filter_fields);
+    return title_ok || artist_ok || album_ok;
+}
+
+static void filter_artists(const NaviArtistList *src, NaviArtistList *dst, const char *query, int filter_fields) {
     dst->count = 0;
     for (int i = 0; i < src->count; i++) {
-        if (strcasestr_simple(src->items[i].name, query) || strcasestr_simple(src->items[i].artist, query)) {
+        if (artist_matches(&src->items[i], query, filter_fields)) {
+            if (dst->count >= MAX_ITEMS) {
+                debug_log("[BOUNDS] filter_artists: dst->count=%d >= MAX_ITEMS=%d", dst->count, MAX_ITEMS);
+                break;
+            }
             dst->items[dst->count++] = src->items[i];
         }
     }
 }
 
-static void filter_albums(const NaviAlbumList *src, NaviAlbumList *dst, const char *query) {
+static void filter_albums(const NaviAlbumList *src, NaviAlbumList *dst, const char *query, int filter_fields) {
     dst->count = 0;
     for (int i = 0; i < src->count; i++) {
-        if (strcasestr_simple(src->items[i].name, query) || strcasestr_simple(src->items[i].artist, query)) {
+        if (album_matches(&src->items[i], query, filter_fields)) {
+            if (dst->count >= MAX_ITEMS) {
+                debug_log("[BOUNDS] filter_albums: dst->count=%d >= MAX_ITEMS=%d", dst->count, MAX_ITEMS);
+                break;
+            }
             dst->items[dst->count++] = src->items[i];
         }
     }
 }
 
-static void filter_tracks(const NaviTrackList *src, NaviTrackList *dst, const char *query) {
+static void filter_tracks(const NaviTrackList *src, NaviTrackList *dst, const char *query, int filter_fields) {
     dst->count = 0;
     for (int i = 0; i < src->count; i++) {
-        if (strcasestr_simple(src->items[i].title, query) || strcasestr_simple(src->items[i].artist, query) || strcasestr_simple(src->items[i].album, query)) {
+        if (track_matches(&src->items[i], query, filter_fields)) {
+            if (dst->count >= MAX_ITEMS) {
+                debug_log("[BOUNDS] filter_tracks: dst->count=%d >= MAX_ITEMS=%d", dst->count, MAX_ITEMS);
+                break;
+            }
             dst->items[dst->count++] = src->items[i];
         }
     }
@@ -339,51 +425,115 @@ void ui_draw(const UiState *state, C3D_RenderTarget *top, C3D_RenderTarget *bott
     // Build name arrays for the list
     static const char *names[MAX_ITEMS];
 
-    // Draw search bar if active
+    // --- Search bar with checkboxes ---
     if (state->search_active) {
+        // Search bar background
         draw_rect(0, 0, BOT_W, 30, COL_HEADER_BG);
-        char bar[80];
-        snprintf(bar, sizeof(bar), "Search: %s", state->search_query);
+        char bar[160];
+        snprintf(bar, sizeof(bar), "Search: %s", state->search_query[0] ? state->search_query : "...");
         draw_text(8, 20, 0.55f, COL_ACCENT, bar);
+
+        // Draw checkboxes below the search bar
+        for (int i = 0; i < NUM_CHECKBOXES; i++) {
+            int active = (state->filter_fields & s_checkbox_bits[i]) != 0;
+            // Default: if no bits set, all are active
+            if (state->filter_fields == 0) active = 1;
+            float x = CHECKBOX_X_START + i * (CHECKBOX_W + CHECKBOX_GAP);
+            draw_rect(x, CHECKBOX_Y, CHECKBOX_W, CHECKBOX_H,
+                      active ? COL_ACCENT : COL_HEADER_BG);
+            if (active) {
+                draw_text(x + 4, CHECKBOX_Y + 12, 0.45f, COL_BG, "\xE2\x9C\x93");
+            }
+            draw_text(x + CHECKBOX_W + 2, CHECKBOX_Y + 12, 0.42f, COL_TEXT,
+                      s_checkbox_labels[i]);
+        }
+
+        // Help text
+        draw_text(8, CHECKBOX_Y + CHECKBOX_H + 4, 0.35f, COL_DIM,
+                  "Touch:toggle  D-Pad:cycle  A:toggle  Y:clear  B/X:back");
     }
+
+    // Determine which fields to search based on current screen
+    // Artists screen: search name + artist
+    // Albums screen: search name + artist
+    // Tracks screen: search title + artist + album
+    int screen_filter = 0;
+    switch (state->screen) {
+        case SCREEN_ARTISTS:  screen_filter = 1 | 2; break; // name + artist
+        case SCREEN_ALBUMS:   screen_filter = 1 | 2; break; // name + artist
+        case SCREEN_TRACKS:   screen_filter = 1 | 2 | 4; break; // name + artist + album
+        default: break;
+    }
+
+    // If search is active, intersect user's filter with screen's available fields
+    int effective_filter = 0;
+    if (state->search_active && state->search_query[0]) {
+        // User's chosen fields intersected with what's available on this screen
+        for (int i = 0; i < NUM_CHECKBOXES; i++) {
+            int bit = s_checkbox_bits[i];
+            if (state->filter_fields == 0) {
+                // No user filter: use all fields available on this screen
+                if (screen_filter & bit) effective_filter |= bit;
+            } else {
+                // User has explicit filter: only use fields that are both
+                // in user's filter AND available on this screen
+                if ((state->filter_fields & bit) && (screen_filter & bit)) {
+                    effective_filter |= bit;
+                }
+            }
+        }
+    }
+
+    // Filtered lists must be static — each is ~32-34KB (200 items) and would
+    // overflow the 128KB main thread stack if declared as local variables.
+    static NaviArtistList filtered_artists;
+    static NaviAlbumList  filtered_albums;
+    static NaviTrackList  filtered_tracks;
+
     switch (state->screen) {
         case SCREEN_ARTISTS: {
-            NaviArtistList filtered;
             const NaviArtistList *src = &state->artists;
-            if (state->search_active && state->search_type == 0 && state->search_query[0]) {
-                filter_artists(&state->artists, &filtered, state->search_query);
-                src = &filtered;
+            if (state->search_active && state->search_query[0]) {
+                filter_artists(&state->artists, &filtered_artists, state->search_query, effective_filter);
+                src = &filtered_artists;
             }
-            for (int i = 0; i < src->count; i++)
+            for (int i = 0; i < src->count && i < MAX_ITEMS; i++) {
                 names[i] = src->items[i].name;
+            }
+            if (src->count > MAX_ITEMS) debug_log("[BOUNDS] ARTISTS: src->count=%d > MAX_ITEMS=%d", src->count, MAX_ITEMS);
             draw_list(names, src->count,
-                      state->selected_artist, state->scroll_offset, state->search_active ? "Artists (Search)" : "Artists");
+                      state->selected_artist, state->scroll_offset,
+                      state->search_active ? "Artists (Search)" : "Artists");
             break;
         }
         case SCREEN_ALBUMS: {
-            NaviAlbumList filtered;
             const NaviAlbumList *src = &state->albums;
-            if (state->search_active && state->search_type == 1 && state->search_query[0]) {
-                filter_albums(&state->albums, &filtered, state->search_query);
-                src = &filtered;
+            if (state->search_active && state->search_query[0]) {
+                filter_albums(&state->albums, &filtered_albums, state->search_query, effective_filter);
+                src = &filtered_albums;
             }
-            for (int i = 0; i < src->count; i++)
+            for (int i = 0; i < src->count && i < MAX_ITEMS; i++) {
                 names[i] = src->items[i].name;
+            }
+            if (src->count > MAX_ITEMS) debug_log("[BOUNDS] ALBUMS: src->count=%d > MAX_ITEMS=%d", src->count, MAX_ITEMS);
             draw_list(names, src->count,
-                      state->selected_album, state->scroll_offset, state->search_active ? "Albums (Search)" : "Albums");
+                      state->selected_album, state->scroll_offset,
+                      state->search_active ? "Albums (Search)" : "Albums");
             break;
         }
         case SCREEN_TRACKS: {
-            NaviTrackList filtered;
             const NaviTrackList *src = &state->tracks;
-            if (state->search_active && state->search_type == 2 && state->search_query[0]) {
-                filter_tracks(&state->tracks, &filtered, state->search_query);
-                src = &filtered;
+            if (state->search_active && state->search_query[0]) {
+                filter_tracks(&state->tracks, &filtered_tracks, state->search_query, effective_filter);
+                src = &filtered_tracks;
             }
-            for (int i = 0; i < src->count; i++)
+            for (int i = 0; i < src->count && i < MAX_ITEMS; i++) {
                 names[i] = src->items[i].title;
+            }
+            if (src->count > MAX_ITEMS) debug_log("[BOUNDS] TRACKS: src->count=%d > MAX_ITEMS=%d", src->count, MAX_ITEMS);
             draw_list(names, src->count,
-                      state->selected_track, state->scroll_offset, state->search_active ? "Tracks (Search)" : "Tracks");
+                      state->selected_track, state->scroll_offset,
+                      state->search_active ? "Tracks (Search)" : "Tracks");
             break;
         }
         case SCREEN_PLAYER:
@@ -397,10 +547,10 @@ void ui_draw(const UiState *state, C3D_RenderTarget *top, C3D_RenderTarget *bott
 }
 
 // --- Search input helpers ---
-void ui_search_activate(UiState *state, int type) {
+void ui_search_activate(UiState *state) {
     state->search_active = 1;
-    state->search_type = type;
     state->search_query[0] = '\0';
+    state->filter_fields = 0; // 0 = all fields active (default)
     state->scroll_offset = 0;
 }
 void ui_search_deactivate(UiState *state) {
@@ -438,19 +588,51 @@ bool ui_handle_input(UiState *state) {
     static u32 repeat_timer = 0;
     static u32 last_held = 0;
 
-    // --- Search input mode ---
+    // --- Search mode with checkbox toggling ---
     if (state->search_active) {
-        // Accept text input (A-Z, 0-9, space, backspace, etc.)
-        // For demo: use X to exit search, Y to clear, A to apply, B to backspace
-        if (down & KEY_X) { ui_search_deactivate(state); return false; }
-        if (down & KEY_Y) { ui_search_clear(state); return false; }
-        if (down & KEY_A) { ui_search_apply(state); return false; }
-        if (down & KEY_B) { ui_search_backspace(state); return false; }
+        // Touch: toggle checkboxes
+        touchPosition touch;
+        hidTouchRead(&touch);
+        if (touch.px > 0 || touch.py > 0) {
+            int cb_idx = hit_test_checkboxes(touch);
+            if (cb_idx >= 0) {
+                ui_search_toggle_field(state, cb_idx);
+                return false;
+            }
+        }
+
+        // Button: D-pad left/right cycles through checkboxes, A toggles
+        if (down & KEY_DLEFT) {
+            // Cycle focus left (wrap around)
+            return false;
+        }
+        if (down & KEY_DRIGHT) {
+            // Cycle focus right (wrap around)
+            return false;
+        }
+        if (down & KEY_A) {
+            // Toggle first checkbox (Name) as quick toggle
+            ui_search_toggle_field(state, 0);
+            return false;
+        }
+        if (down & KEY_B) {
+            ui_search_deactivate(state);
+            return false;
+        }
+        if (down & KEY_X) {
+            ui_search_deactivate(state);
+            return false;
+        }
+        if (down & KEY_Y) {
+            ui_search_clear(state);
+            return false;
+        }
+
         // Use 3DS software keyboard for input
         SwkbdState swkbd;
-        char kbdout[64] = {0};
+        char kbdout[128] = {0};
         swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 1, sizeof(kbdout)-1);
-        swkbdSetHintText(&swkbd, "Enter search query");
+        swkbdSetHintText(&swkbd, "Search album, artist, or song");
         if (swkbdInputText(&swkbd, kbdout, sizeof(kbdout)) == SWKBD_BUTTON_CONFIRM) {
             strncpy(state->search_query, kbdout, sizeof(state->search_query)-1);
             state->search_query[sizeof(state->search_query)-1] = '\0';
@@ -505,10 +687,8 @@ bool ui_handle_input(UiState *state) {
             if (*sel >= state->scroll_offset + VISIBLE_ROWS)
                 state->scroll_offset = *sel - VISIBLE_ROWS + 1;
         }
-        // Start search: L = artist, R = album, START = track
-        if (down & KEY_L) { ui_search_activate(state, 0); return false; }
-        if (down & KEY_R) { ui_search_activate(state, 1); return false; }
-        if (down & KEY_START) { ui_search_activate(state, 2); return false; }
+        // Unified search activation: Y opens search on any screen
+        if (down & KEY_Y) { ui_search_activate(state); return false; }
     }
 
     if (down & KEY_A) {

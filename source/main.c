@@ -18,6 +18,24 @@
 #define SOC_BUFSIZE 0x100000
 static u32 soc_buf[SOC_BUFSIZE / 4] __attribute__((aligned(0x1000)));
 
+static aptHookCookie s_apt_cookie;
+
+static void s_apt_hook(APT_HookType hook, void* param) {
+    (void)param;
+    switch (hook) {
+        case APTHOOK_ONSLEEP:
+            audio_stop();
+            break;
+        case APTHOOK_ONWAKEUP:
+            break;
+        case APTHOOK_ONEXIT:
+            audio_stop();
+            break;
+        default:
+            break;
+    }
+}
+
 static void set_status(UiState *s, const char *msg) {
     strncpy(s->status_msg, msg, sizeof(s->status_msg) - 1);
 }
@@ -171,7 +189,19 @@ int main(void) {
     }
 
     debug_log("Entering main loop...");
+
+    // Register APT hook for sleep/wake/exit events
+    aptHook(&s_apt_cookie, s_apt_hook, NULL);
+    debug_log("APT hook registered");
+
     while (aptMainLoop()) {
+        // Prevent sleep while music is playing
+        if (audio_available && audio_is_playing()) {
+            aptSetSleepAllowed(false);
+        } else {
+            aptSetSleepAllowed(true);
+        }
+
         debug_log("Main loop iteration");
         bool action = ui_handle_input(state);
         debug_log("ui_handle_input returned: %d", action);
@@ -249,6 +279,10 @@ int main(void) {
     }
 
     debug_log("Main loop exited, starting cleanup...");
+
+    // Re-enable sleep before exiting
+    aptSetSleepAllowed(true);
+
     debug_log("Shutting down");
     if (audio_available) {
         debug_log("Stopping audio and cleaning up audio subsystem");

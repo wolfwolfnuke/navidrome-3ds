@@ -72,6 +72,27 @@ navidrome-3ds/
 - Top screen: now-playing info (title/artist/album, play state, volume bar)
 - Bottom screen: scrollable list (Artists → Albums → Tracks → Player)
 
+### Search & Filter System (unified, v3)
+- **Unified search**: single **Y** button opens search on any screen
+  (Artists, Albums, or Tracks) — no longer screen-bound
+- **Checkbox-based filtering**: three visible checkboxes drawn below the
+  search bar — **Name**, **Artist**, **Album** — toggled by touch or A button
+- **filter_fields bitmask** in UiState: bit0=Name/title, bit1=Artist,
+  bit2=Album. If no bits set (value 0), all available fields are searched
+  (backward-compatible default)
+- **Screen-aware filtering**: Album checkbox is only effective on Tracks
+  screen; Name/Artist work on all screens. The effective filter is the
+  intersection of user's checkbox selections and the fields available on
+  the current screen
+- **Real-time filtering**: results update as you type — no "apply" step
+  needed. Scroll resets on every keystroke
+- **Expanded search_query**: increased from 64 to 128 bytes to accommodate
+  longer queries
+- **Touch input**: `hit_test_checkboxes()` maps touch coordinates to checkbox
+  indices; `ui_search_toggle_field()` flips the corresponding bitmask bit
+- **Input flow**: Y → opens search + keyboard → type query → touch checkboxes
+  to narrow → results filter live → B/X exits, Y clears query
+
 ### debug.c
 - Uses raw FSUSER API (not fopen) to write to SD card — fopen was
   unreliable on this firmware
@@ -210,6 +231,29 @@ block's second `drmp3_uninit` only fires on the error path where `mp3 != NULL`
 - Song switching (both crash bugs fixed)
 - Stack canary check on every audio_stop() — will warn in log if stack
   approaches its limit before it causes a silent crash
+- **Unified search with checkbox filters** (Y button, real-time, touch-toggleable)
+
+---
+
+## In-Flight Plans
+
+### Keep Music Playing When Screen Is Off (Lid Closed)
+
+**Status:** Implemented — see `main.c` main loop.
+
+**How it works:**
+1. `aptSetSleepAllowed(false)` is called in the main loop whenever
+   `audio_is_playing()` returns true — prevents the system from sleeping
+   while music is playing.
+2. `aptHook` callback registered for `APT_HOOK_ONSLEEP` and
+   `APT_HOOK_ONEXIT` — calls `audio_stop()` gracefully on forced sleep
+   or app exit.
+3. `aptSetSleepAllowed(true)` called during cleanup before exit.
+
+**Files modified:** `source/main.c` only (conditional block in main loop +
+APT hook registration).
+
+**No changes needed to:** `audio.c`, `audio.h`, `ui.c`, `ui.h`, `api.c`.
 
 ---
 
