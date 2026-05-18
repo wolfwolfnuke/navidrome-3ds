@@ -18,7 +18,8 @@ API calls), httpc (3DS native HTTP, for audio download), and dr_mp3.h
 navidrome-3ds/
 ├── Makefile
 ├── romfs/
-│   └── config.ini         # default config, user edits on SD card
+│   ├── config.ini         # default config, user edits on SD card
+│   └── popjoy.bcfnt       # fallback font (loaded if system fonts unavailable)
 └── source/
     ├── main.c             # entry point, main loop, init/cleanup
     ├── config.c/h         # reads/writes sdmc:/3ds/navidrome/config.ini
@@ -67,8 +68,15 @@ navidrome-3ds/
 - citro2d for all rendering
 - Loads system fonts via C2D_FontLoadSystem for CJK support
   (Japanese, Simplified Chinese, Traditional Chinese, Korean)
+- **Fallback font**: If system fonts fail to load (e.g. missing system archive),
+  loads `romfs:/popjoy.bcfnt` as a bundled fallback
 - UTF-8 aware draw_text: decodes codepoints, finds first font with glyph,
   renders in segments
+- **Filtered lists are static** (not stack): `filtered_artists`, `filtered_albums`,
+  `filtered_tracks` are declared as `static` in `ui_draw()` to avoid ~100KB
+  main-thread stack overflow (each list is ~32-34KB for 200 items)
+- **Bounds checking**: All loops that fill `names[]` and filtered lists check
+  `i < MAX_ITEMS` to prevent buffer overflows
 - Top screen: now-playing info (title/artist/album, play state, volume bar)
 - Bottom screen: scrollable list (Artists → Albums → Tracks → Player)
 
@@ -147,6 +155,18 @@ navidrome-3ds/
     which can exceed 1024 bytes with long hostnames/passwords. All URL
     buffers in api.c are 2048 to avoid truncation warnings.
 
+12. **Main thread stack is only ~128KB** — large local variables in `ui_draw()`
+    (three filtered lists of 200 items each) would overflow the stack. All
+    filtered lists must be `static` (BSS), not local variables.
+
+13. **System fonts may not be available** on all 3DS systems. The app now
+    bundles `popjoy.bcfnt` in romfs as a fallback, loaded via
+    `C2D_FontLoad("romfs:/popjoy.bcfnt")` if `C2D_FontLoadSystem()` returns NULL.
+
+14. **Bounds checking is critical** — all loops filling `names[]` and filtered
+    lists must check `i < MAX_ITEMS` to prevent out-of-bounds writes that
+    corrupt memory and cause data aborts.
+
 ---
 
 ## Song-Switch Crash — Full History
@@ -215,6 +235,43 @@ block's second `drmp3_uninit` only fires on the error path where `mp3 != NULL`
 
 ---
 
+### Bug 3: Main Thread Stack Overflow (FIXED, v3)
+
+**Symptom**: Data abort, exception type: data abort, fault status: translation
+section, access type: write. Crash occurs during `ui_draw()` when rendering
+the search/filter screen.
+
+**Crash dump analysis**: The 3DS main thread stack is only ~128KB. Three local
+variables in `ui_draw()` — `NaviArtistList filtered`, `NaviAlbumList filtered`,
+`NaviTrackList filtered` — each ~32-34KB (200 items × struct size), totaling
+~100KB. Combined with `draw_text()` locals, `draw_list()` locals, and function
+call overhead, the stack overflowed, SP ran into unmapped memory, and the next
+write triggered the data abort.
+
+**Root cause**: Large local variables in `ui_draw()` overflow the 128KB main
+thread stack.
+
+**Fix**:
+- Changed `filtered` from local variable to `static` in each switch case.
+- Added bounds checking: all loops now check `i < MAX_ITEMS`.
+- Added debug logging for bounds violations.
+
+---
+
+### Bug 4: System Font Loading Failure (FIXED, v4)
+
+**Symptom**: Log shows `ERROR: Failed to load standard system font (CFG_REGION_USA)`
+followed by `FATAL: No system fonts loaded. Skipping UI draw and exiting.`
+
+**Root cause**: `C2D_FontLoadSystem(CFG_REGION_USA)` returns NULL — the system
+font archive is missing or inaccessible on this 3DS (possibly due to firmware,
+SD card, or custom firmware configuration).
+
+**Fix**: Added fallback font loading from `romfs:/popjoy.bcfnt`. If system fonts
+fail, the app loads the bundled font instead.
+
+---
+
 ## Current Status
 
 ### Working
@@ -265,6 +322,9 @@ dkp-pacman -S 3ds-dev 3ds-curl 3ds-mbedtls
 
 # Drop dr_mp3.h into source/ from:
 # https://github.com/mackron/dr_libs
+
+# Ensure fallback font is in romfs/:
+# romfs/popjoy.bcfnt (bundled font for when system fonts are unavailable)
 
 # Build
 make clean && make

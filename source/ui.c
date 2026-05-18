@@ -39,6 +39,60 @@ static C2D_TextBuf s_tbuf;
 // ---------------------------------------------------------------------------
 #define MAX_FONTS 8
 static C2D_Font s_fonts[MAX_FONTS];
+
+// ---------------------------------------------------------------------------
+// Text cache — parse/optimize once, draw every frame.
+// Without this, draw_text() re-parses and re-optimizes every frame,
+// which is extremely slow (especially with non-system fonts).
+// ---------------------------------------------------------------------------
+#define MAX_CACHED_TEXT 256
+
+typedef struct {
+    char     str[128];
+    int      font_idx;
+    float    scale;
+    C2D_Text parsed;   // pre-parsed, pre-optimized text object
+} CachedText;
+
+static CachedText s_text_cache[MAX_CACHED_TEXT];
+static int        s_cache_count = 0;
+
+static CachedText* cache_get_or_create(const char *str, int font_idx, float scale) {
+    // Search for existing entry
+    for (int i = 0; i < s_cache_count; i++) {
+        if (s_text_cache[i].font_idx == font_idx &&
+            s_text_cache[i].scale == scale &&
+            strcmp(s_text_cache[i].str, str) == 0) {
+            return &s_text_cache[i];
+        }
+    }
+    // Evict oldest if full
+    if (s_cache_count >= MAX_CACHED_TEXT) {
+        // Shift entries down, evicting the oldest
+        for (int i = 0; i < MAX_CACHED_TEXT - 1; i++) {
+            s_text_cache[i] = s_text_cache[i + 1];
+        }
+        s_cache_count--;
+    }
+    // Insert new entry at the end (newest)
+    CachedText *entry = &s_text_cache[s_cache_count++];
+    strncpy(entry->str, str, sizeof(entry->str) - 1);
+    entry->str[sizeof(entry->str) - 1] = '\0';
+    entry->font_idx = font_idx;
+    entry->scale = scale;
+    // Parse and optimize into the cached text object
+    if (s_fonts[font_idx]) {
+        C2D_TextFontParse(&entry->parsed, s_fonts[font_idx], s_tbuf, str);
+    } else {
+        C2D_TextParse(&entry->parsed, s_tbuf, str);
+    }
+    C2D_TextOptimize(&entry->parsed);
+    return entry;
+}
+
+static void cache_clear(void) {
+    s_cache_count = 0;
+}
 static int      s_font_count = 0;
 
 // System font region codes (3DS has separate fonts per region/script)
@@ -109,18 +163,10 @@ static uint32_t utf8_next(const char **str) {
 
 // ---------------------------------------------------------------------------
 // draw_text: renders UTF-8 string using system fonts for full CJK support
+// Uses a text cache so parse/optimize happen once per unique string+font+scale.
 // ---------------------------------------------------------------------------
 static void draw_text(float x, float y, float sz, u32 color, const char *str) {
-    debug_log("[UI] draw_text called: x=%.2f, y=%.2f, sz=%.2f, color=0x%08X, str=%.32s", x, y, sz, color, str ? str : "(null)");
-    if (!str || !str[0]) {
-        debug_log("[UI] draw_text: empty or null string");
-        return;
-    }
-
-    // Build a segment list: split the string into runs, each rendered
-    // with the first font that contains the glyph.
-    // For simplicity, render character by character using the right font.
-    // We accumulate runs of characters that share the same font.
+    if (!str || !str[0]) return;
 
     char seg[256];
     int  seg_font = 0;
@@ -134,7 +180,7 @@ static void draw_text(float x, float y, float sz, u32 color, const char *str) {
         int seq_len = (int)(p - before);
 
         // Find which font has this glyph
-        int found_font = 0; // default to font 0
+        int found_font = 0;
         for (int fi = 0; fi < s_font_count; fi++) {
             if (s_fonts[fi] && C2D_FontGlyphIndexFromCodePoint(s_fonts[fi], cp) != 0) {
                 found_font = fi;
@@ -145,20 +191,15 @@ static void draw_text(float x, float y, float sz, u32 color, const char *str) {
         // If font changed or buffer full, flush current segment
         if ((found_font != seg_font || seg_len + seq_len >= (int)sizeof(seg) - 1) && seg_len > 0) {
             seg[seg_len] = '\0';
-            C2D_Text txt;
-            C2D_TextBufClear(s_tbuf);
-            if (s_fonts[seg_font])
-                C2D_TextFontParse(&txt, s_fonts[seg_font], s_tbuf, seg);
-            else
-                C2D_TextParse(&txt, s_tbuf, seg);
-            C2D_TextOptimize(&txt);
+
+            // Use cached text object — parse/optimize only once per unique string
+            CachedText *cached = cache_get_or_create(seg, seg_font, sz);
 
             // Measure width to advance cur_x
             float tw = 0, th = 0;
-            C2D_TextGetDimensions(&txt, sz, sz, &tw, &th);
-            C2D_DrawText(&txt, C2D_WithColor | C2D_AtBaseline,
+            C2D_TextGetDimensions(&cached->parsed, sz, sz, &tw, &th);
+            C2D_DrawText(&cached->parsed, C2D_WithColor | C2D_AtBaseline,
                          cur_x, y, 0.5f, sz, sz, color);
-            debug_log("[UI] draw_text: drew segment '%s' with font %d at x=%.2f", seg, seg_font, cur_x);
             cur_x += tw;
             seg_len = 0;
         }
@@ -171,18 +212,12 @@ static void draw_text(float x, float y, float sz, u32 color, const char *str) {
     // Flush remaining segment
     if (seg_len > 0) {
         seg[seg_len] = '\0';
-        C2D_Text txt;
-        C2D_TextBufClear(s_tbuf);
-        if (s_fonts[seg_font])
-            C2D_TextFontParse(&txt, s_fonts[seg_font], s_tbuf, seg);
-        else
-            C2D_TextParse(&txt, s_tbuf, seg);
-        C2D_TextOptimize(&txt);
-        C2D_DrawText(&txt, C2D_WithColor | C2D_AtBaseline,
+        CachedText *cached = cache_get_or_create(seg, seg_font, sz);
+        float tw = 0, th = 0;
+        C2D_TextGetDimensions(&cached->parsed, sz, sz, &tw, &th);
+        C2D_DrawText(&cached->parsed, C2D_WithColor | C2D_AtBaseline,
                      cur_x, y, 0.5f, sz, sz, color);
-        debug_log("[UI] draw_text: drew final segment '%s' with font %d at x=%.2f", seg, seg_font, cur_x);
     }
-    debug_log("[UI] draw_text complete");
 }
 
 // ---------------------------------------------------------------------------
@@ -740,13 +775,15 @@ bool ui_handle_input(UiState *state) {
 
 void ui_init(void) {
     debug_log("[ENTER] ui_init()");
-    s_tbuf = C2D_TextBufNew(8192);
+    // Larger buffer needed because we no longer clear it every frame —
+    // the cache holds parsed text objects that reference into this buffer.
+    s_tbuf = C2D_TextBufNew(65536);
     fonts_init();
 }
 
 void ui_cleanup(void) {
     debug_log("[ENTER] ui_cleanup()");
-    debug_log("[ENTER] ui_cleanup()");
+    cache_clear();
     fonts_cleanup();
     C2D_TextBufDelete(s_tbuf);
 }
