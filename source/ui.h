@@ -7,6 +7,7 @@ typedef enum {
     SCREEN_ALBUMS,
     SCREEN_TRACKS,
     SCREEN_PLAYER,
+    SCREEN_SEARCH,
 } Screen;
 
 typedef struct {
@@ -23,19 +24,15 @@ typedef struct {
 
     // Search — unified across all screens
     char  search_query[128];
-    int   search_active; // 0: off, 1: on
-    int   filter_fields; // bitmask: bit0=name/title, bit1=artist, bit2=album
+    int   filter_fields;    // bitmask: bit0=name/title, bit1=artist, bit2=album
+    int   search_selected;  // index into filtered results on SCREEN_SEARCH
+    int   search_scroll;    // scroll offset for search results list
+    int   search_prev_screen; // which screen we navigated from (for B-back)
 
     bool  loading;
     char  status_msg[128];
 } UiState;
 
-void ui_search_activate(UiState *state);
-void ui_search_deactivate(UiState *state);
-void ui_search_input(UiState *state, char c);
-void ui_search_backspace(UiState *state);
-void ui_search_apply(UiState *state);
-void ui_search_clear(UiState *state);
 void ui_search_toggle_field(UiState *state, int field_idx);
 
 void ui_init(void);

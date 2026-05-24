@@ -260,11 +260,21 @@ static void draw_rect(float x, float y, float w, float h, u32 color) {
 }
 
 // Draw a scrollable list on the bottom screen
+// If draw_header is 0, skip the header bar (caller draws it instead)
 static void draw_list(const char **names, int count,
-                       int selected, int scroll, const char *title) {
-    // Header bar
-    draw_rect(0, 0, BOT_W, 30, COL_HEADER_BG);
-    draw_text(8, 20, 0.55f, COL_ACCENT, title);
+                       int selected, int scroll, const char *title,
+                       int draw_header) {
+    if (count == 0) {
+        draw_rect(0, 0, BOT_W, BOT_H, COL_BG);
+        draw_text(8, BOT_H/2 - 8, 0.5f, COL_DIM, "No results found.");
+        return;
+    }
+
+    if (draw_header) {
+        // Header bar
+        draw_rect(0, 0, BOT_W, 30, COL_HEADER_BG);
+        draw_text(8, 20, 0.55f, COL_ACCENT, title);
+    }
 
     // Items
     for (int i = 0; i < VISIBLE_ROWS; i++) {
@@ -340,10 +350,17 @@ static void draw_now_playing(const UiState *state) {
 
 static int strcasestr_simple(const char *haystack, const char *needle) {
     if (!needle[0]) return 1;
+    // Pre-compute lowercase needle to avoid repeated tolower() calls
+    char needle_lower[128];
+    int nlen = 0;
+    for (; needle[nlen] && nlen < 127; nlen++)
+        needle_lower[nlen] = (char)tolower(needle[nlen]);
+    needle_lower[nlen] = '\0';
+
     for (const char *h = haystack; *h; h++) {
         int i = 0;
-        while (needle[i] && h[i] && (tolower(h[i]) == tolower(needle[i]))) i++;
-        if (!needle[i]) return 1;
+        while (needle_lower[i] && h[i] && ((char)tolower(h[i]) == needle_lower[i])) i++;
+        if (!needle_lower[i]) return 1;
     }
     return 0;
 }
@@ -460,34 +477,6 @@ void ui_draw(const UiState *state, C3D_RenderTarget *top, C3D_RenderTarget *bott
     // Build name arrays for the list
     static const char *names[MAX_ITEMS];
 
-    // --- Search bar with checkboxes ---
-    if (state->search_active) {
-        // Search bar background
-        draw_rect(0, 0, BOT_W, 30, COL_HEADER_BG);
-        char bar[160];
-        snprintf(bar, sizeof(bar), "Search: %s", state->search_query[0] ? state->search_query : "...");
-        draw_text(8, 20, 0.55f, COL_ACCENT, bar);
-
-        // Draw checkboxes below the search bar
-        for (int i = 0; i < NUM_CHECKBOXES; i++) {
-            int active = (state->filter_fields & s_checkbox_bits[i]) != 0;
-            // Default: if no bits set, all are active
-            if (state->filter_fields == 0) active = 1;
-            float x = CHECKBOX_X_START + i * (CHECKBOX_W + CHECKBOX_GAP);
-            draw_rect(x, CHECKBOX_Y, CHECKBOX_W, CHECKBOX_H,
-                      active ? COL_ACCENT : COL_HEADER_BG);
-            if (active) {
-                draw_text(x + 4, CHECKBOX_Y + 12, 0.45f, COL_BG, "\xE2\x9C\x93");
-            }
-            draw_text(x + CHECKBOX_W + 2, CHECKBOX_Y + 12, 0.42f, COL_TEXT,
-                      s_checkbox_labels[i]);
-        }
-
-        // Help text
-        draw_text(8, CHECKBOX_Y + CHECKBOX_H + 4, 0.35f, COL_DIM,
-                  "Touch:toggle  D-Pad:cycle  A:toggle  Y:clear  B/X:back");
-    }
-
     // Determine which fields to search based on current screen
     // Artists screen: search name + artist
     // Albums screen: search name + artist
@@ -528,47 +517,83 @@ void ui_draw(const UiState *state, C3D_RenderTarget *top, C3D_RenderTarget *bott
     switch (state->screen) {
         case SCREEN_ARTISTS: {
             const NaviArtistList *src = &state->artists;
+            int display_count = state->artists.count;
+            int display_selected = state->selected_artist;
+            int display_scroll = state->scroll_offset;
             if (state->search_active && state->search_query[0]) {
                 filter_artists(&state->artists, &filtered_artists, state->search_query, effective_filter);
                 src = &filtered_artists;
+                display_count = filtered_artists.count;
+                display_selected = state->search_selected;
+                display_scroll = state->search_scroll;
             }
-            for (int i = 0; i < src->count && i < MAX_ITEMS; i++) {
+            for (int i = 0; i < display_count && i < MAX_ITEMS; i++) {
                 names[i] = src->items[i].name;
             }
-            if (src->count > MAX_ITEMS) debug_log("[BOUNDS] ARTISTS: src->count=%d > MAX_ITEMS=%d", src->count, MAX_ITEMS);
-            draw_list(names, src->count,
-                      state->selected_artist, state->scroll_offset,
-                      state->search_active ? "Artists (Search)" : "Artists");
+            // Clamp selection to prevent out-of-bounds highlight
+            if (display_count > 0 && display_selected >= display_count)
+                display_selected = display_count - 1;
+            if (display_count == 0)
+                display_selected = 0;
+            if (display_count > MAX_ITEMS) debug_log("[BOUNDS] ARTISTS: display_count=%d > MAX_ITEMS=%d", display_count, MAX_ITEMS);
+            draw_list(names, display_count,
+                      display_selected, display_scroll,
+                      state->search_active ? "Artists (Search)" : "Artists",
+                      !state->search_active);
             break;
         }
         case SCREEN_ALBUMS: {
             const NaviAlbumList *src = &state->albums;
+            int display_count = state->albums.count;
+            int display_selected = state->selected_album;
+            int display_scroll = state->scroll_offset;
             if (state->search_active && state->search_query[0]) {
                 filter_albums(&state->albums, &filtered_albums, state->search_query, effective_filter);
                 src = &filtered_albums;
+                display_count = filtered_albums.count;
+                display_selected = state->search_selected;
+                display_scroll = state->search_scroll;
             }
-            for (int i = 0; i < src->count && i < MAX_ITEMS; i++) {
+            for (int i = 0; i < display_count && i < MAX_ITEMS; i++) {
                 names[i] = src->items[i].name;
             }
-            if (src->count > MAX_ITEMS) debug_log("[BOUNDS] ALBUMS: src->count=%d > MAX_ITEMS=%d", src->count, MAX_ITEMS);
-            draw_list(names, src->count,
-                      state->selected_album, state->scroll_offset,
-                      state->search_active ? "Albums (Search)" : "Albums");
+            // Clamp selection to prevent out-of-bounds highlight
+            if (display_count > 0 && display_selected >= display_count)
+                display_selected = display_count - 1;
+            if (display_count == 0)
+                display_selected = 0;
+            if (display_count > MAX_ITEMS) debug_log("[BOUNDS] ALBUMS: display_count=%d > MAX_ITEMS=%d", display_count, MAX_ITEMS);
+            draw_list(names, display_count,
+                      display_selected, display_scroll,
+                      state->search_active ? "Albums (Search)" : "Albums",
+                      !state->search_active);
             break;
         }
         case SCREEN_TRACKS: {
             const NaviTrackList *src = &state->tracks;
+            int display_count = state->tracks.count;
+            int display_selected = state->selected_track;
+            int display_scroll = state->scroll_offset;
             if (state->search_active && state->search_query[0]) {
                 filter_tracks(&state->tracks, &filtered_tracks, state->search_query, effective_filter);
                 src = &filtered_tracks;
+                display_count = filtered_tracks.count;
+                display_selected = state->search_selected;
+                display_scroll = state->search_scroll;
             }
-            for (int i = 0; i < src->count && i < MAX_ITEMS; i++) {
+            for (int i = 0; i < display_count && i < MAX_ITEMS; i++) {
                 names[i] = src->items[i].title;
             }
-            if (src->count > MAX_ITEMS) debug_log("[BOUNDS] TRACKS: src->count=%d > MAX_ITEMS=%d", src->count, MAX_ITEMS);
-            draw_list(names, src->count,
-                      state->selected_track, state->scroll_offset,
-                      state->search_active ? "Tracks (Search)" : "Tracks");
+            // Clamp selection to prevent out-of-bounds highlight
+            if (display_count > 0 && display_selected >= display_count)
+                display_selected = display_count - 1;
+            if (display_count == 0)
+                display_selected = 0;
+            if (display_count > MAX_ITEMS) debug_log("[BOUNDS] TRACKS: display_count=%d > MAX_ITEMS=%d", display_count, MAX_ITEMS);
+            draw_list(names, display_count,
+                      display_selected, display_scroll,
+                      state->search_active ? "Tracks (Search)" : "Tracks",
+                      !state->search_active);
             break;
         }
         case SCREEN_PLAYER:
@@ -579,19 +604,178 @@ void ui_draw(const UiState *state, C3D_RenderTarget *top, C3D_RenderTarget *bott
             draw_text(8, 140, 0.45f, COL_DIM, "B      - Back to track list");
             break;
     }
+
+    // --- Search bar with checkboxes (drawn on top of list) ---
+    if (state->search_active) {
+        // Search bar background
+        draw_rect(0, 0, BOT_W, 30, COL_HEADER_BG);
+        char bar[160];
+        snprintf(bar, sizeof(bar), "Search: %s", state->search_query[0] ? state->search_query : "...");
+        draw_text(8, 19, 0.55f, COL_ACCENT, bar);
+
+        // Draw checkboxes below the search bar
+        for (int i = 0; i < NUM_CHECKBOXES; i++) {
+            int active = (state->filter_fields & s_checkbox_bits[i]) != 0;
+            // Default: if no bits set, all are active
+            if (state->filter_fields == 0) active = 1;
+            float x = CHECKBOX_X_START + i * (CHECKBOX_W + CHECKBOX_GAP);
+            draw_rect(x, CHECKBOX_Y, CHECKBOX_W, CHECKBOX_H,
+                      active ? COL_ACCENT : COL_HEADER_BG);
+            if (active) {
+                draw_text(x + 4, CHECKBOX_Y + 12, 0.45f, COL_BG, "X");
+            }
+            draw_text(x + CHECKBOX_W + 2, CHECKBOX_Y + 12, 0.42f, COL_TEXT,
+                      s_checkbox_labels[i]);
+        }
+
+        // Help text
+        draw_text(8, CHECKBOX_Y + CHECKBOX_H + 4, 0.35f, COL_DIM,
+                  "Touch:toggle  D-Pad:cycle  A:toggle  Y:clear  B/X:back");
+    }
 }
 
 // --- Search input helpers ---
 void ui_search_activate(UiState *state) {
-    state->search_active = 1;
-    state->search_query[0] = '\0';
-    state->filter_fields = 0; // 0 = all fields active (default)
-    state->scroll_offset = 0;
+    switch (state->screen) {
+        case SCREEN_ARTISTS:
+            state->search_saved_sel     = state->selected_artist;
+            state->search_saved_scroll  = state->scroll_offset;
+            break;
+        case SCREEN_ALBUMS:
+            state->search_saved_sel     = state->selected_album;
+            state->search_saved_scroll  = state->scroll_offset;
+            break;
+        case SCREEN_TRACKS:
+            state->search_saved_sel     = state->selected_track;
+            state->search_saved_scroll  = state->scroll_offset;
+            break;
+    }
+
+    state->search_active    = 1;
+    state->search_query[0]  = '\0';
+    state->filter_fields    = 0;
+    state->search_focus     = 0;
+    state->search_selected  = 0;
+    state->search_scroll    = 0;
+    state->scroll_offset    = 0;
 }
-void ui_search_deactivate(UiState *state) {
-    state->search_active = 0;
-    state->search_query[0] = '\0';
-    state->scroll_offset = 0;
+// Restore the user to their exact position before search was activated.
+// Used when the user exits search via B/X without selecting an item.
+static void ui_search_deactivate(UiState *state) {
+    switch (state->screen) {
+        case SCREEN_ARTISTS: state->selected_artist = state->search_saved_sel; break;
+        case SCREEN_ALBUMS:  state->selected_album  = state->search_saved_sel; break;
+        case SCREEN_TRACKS:  state->selected_track  = state->search_saved_sel; break;
+        default: break;
+    }
+    state->scroll_offset = state->search_saved_scroll;
+
+    state->search_active    = 0;
+    state->search_query[0]  = '\0';
+    state->filter_fields    = 0;
+    state->search_focus     = 0;
+    state->search_selected  = 0;
+    state->search_scroll    = 0;
+}
+
+// Map the search_selected index (filtered list) back to the full list
+// index via ID lookup. Used when the user A-selects a search result.
+static void select_search_item(UiState *state) {
+    int *sel = NULL;
+    switch (state->screen) {
+        case SCREEN_ARTISTS: sel = &state->selected_artist; break;
+        case SCREEN_ALBUMS:  sel = &state->selected_album;  break;
+        case SCREEN_TRACKS:  sel = &state->selected_track;  break;
+        default: break;
+    }
+    if (!sel || !state->search_query[0]) return;
+
+    // Build effective filter same way as ui_draw does
+    int screen_filter = 0;
+    switch (state->screen) {
+        case SCREEN_ARTISTS:  screen_filter = 1 | 2; break;
+        case SCREEN_ALBUMS:   screen_filter = 1 | 2; break;
+        case SCREEN_TRACKS:   screen_filter = 1 | 2 | 4; break;
+        default: break;
+    }
+    int effective_filter = 0;
+    for (int i = 0; i < NUM_CHECKBOXES; i++) {
+        int bit = s_checkbox_bits[i];
+        if (state->filter_fields == 0) {
+            if (screen_filter & bit) effective_filter |= bit;
+        } else {
+            if ((state->filter_fields & bit) && (screen_filter & bit))
+                effective_filter |= bit;
+        }
+    }
+
+    // Get the item at search_selected from the filtered list
+    // We need to re-filter to find the ID. Build a temporary filtered list.
+    NaviArtistList tmp_artists = {0};
+    NaviAlbumList  tmp_albums  = {0};
+    NaviTrackList  tmp_tracks  = {0};
+    const void *filtered = NULL;
+
+    switch (state->screen) {
+        case SCREEN_ARTISTS:
+            filter_artists(&state->artists, &tmp_artists, state->search_query, effective_filter);
+            filtered = &tmp_artists;
+            break;
+        case SCREEN_ALBUMS:
+            filter_albums(&state->albums, &tmp_albums, state->search_query, effective_filter);
+            filtered = &tmp_albums;
+            break;
+        case SCREEN_TRACKS:
+            filter_tracks(&state->tracks, &tmp_tracks, state->search_query, effective_filter);
+            filtered = &tmp_tracks;
+            break;
+        default: break;
+    }
+
+    if (!filtered) return;
+
+    int idx = state->search_selected;
+    if (idx < 0) idx = 0;
+    if (state->screen == SCREEN_ARTISTS && idx >= tmp_artists.count) idx = tmp_artists.count - 1;
+    if (state->screen == SCREEN_ALBUMS  && idx >= tmp_albums.count)  idx = tmp_albums.count - 1;
+    if (state->screen == SCREEN_TRACKS  && idx >= tmp_tracks.count)  idx = tmp_tracks.count - 1;
+
+    // Find the matching ID in the full (unfiltered) list
+    char match_id[MAX_ID_LEN];
+    if (state->screen == SCREEN_ARTISTS) {
+        if (tmp_artists.count == 0) return;
+        strncpy(match_id, tmp_artists.items[idx].id, MAX_ID_LEN - 1);
+        match_id[MAX_ID_LEN - 1] = '\0';
+        for (int i = 0; i < state->artists.count; i++) {
+            if (strcmp(state->artists.items[i].id, match_id) == 0) {
+                *sel = i;
+                return;
+            }
+        }
+    } else if (state->screen == SCREEN_ALBUMS) {
+        if (tmp_albums.count == 0) return;
+        strncpy(match_id, tmp_albums.items[idx].id, MAX_ID_LEN - 1);
+        match_id[MAX_ID_LEN - 1] = '\0';
+        for (int i = 0; i < state->albums.count; i++) {
+            if (strcmp(state->albums.items[i].id, match_id) == 0) {
+                *sel = i;
+                return;
+            }
+        }
+    } else if (state->screen == SCREEN_TRACKS) {
+        if (tmp_tracks.count == 0) return;
+        strncpy(match_id, tmp_tracks.items[idx].id, MAX_ID_LEN - 1);
+        match_id[MAX_ID_LEN - 1] = '\0';
+        for (int i = 0; i < state->tracks.count; i++) {
+            if (strcmp(state->tracks.items[i].id, match_id) == 0) {
+                *sel = i;
+                return;
+            }
+        }
+    }
+
+    // Fallback: if ID not found, just use the filtered index
+    *sel = idx;
 }
 void ui_search_input(UiState *state, char c) {
     size_t len = strlen(state->search_query);
@@ -636,45 +820,90 @@ bool ui_handle_input(UiState *state) {
             }
         }
 
-        // Button: D-pad left/right cycles through checkboxes, A toggles
+        // D-pad left/right cycles through focus (0=search bar, 1-3=checkboxes)
         if (down & KEY_DLEFT) {
-            // Cycle focus left (wrap around)
+            state->search_focus--;
+            if (state->search_focus < 0) state->search_focus = NUM_CHECKBOXES;
             return false;
         }
         if (down & KEY_DRIGHT) {
-            // Cycle focus right (wrap around)
+            state->search_focus++;
+            if (state->search_focus > NUM_CHECKBOXES) state->search_focus = 0;
             return false;
         }
-        if (down & KEY_A) {
-            // Toggle first checkbox (Name) as quick toggle
-            ui_search_toggle_field(state, 0);
+
+        // Priority-based action system:
+        // 1=select item, 2=exit search, 3=open keyboard
+        int action = 0;
+
+        // D-pad UP/DOWN navigates filtered list when focus is on search bar
+        if (down & KEY_DUP && state->search_focus == 0) {
+            if (state->search_selected > 0) state->search_selected--;
+            if (state->search_selected < state->search_scroll)
+                state->search_scroll = state->search_selected;
+        }
+        if (down & KEY_DDOWN && state->search_focus == 0) {
+            state->search_selected++;
+            if (state->search_selected >= state->search_scroll + VISIBLE_ROWS)
+                state->search_scroll = state->search_selected - VISIBLE_ROWS + 1;
+        }
+
+        // A: highest priority — open keyboard on empty query, or select item
+        if (down & KEY_A && state->search_focus == 0) {
+            if (state->search_query[0] == '\0') {
+                action = 3; // keyboard
+            } else {
+                action = 1; // select item
+            }
+        } else if (down & KEY_A && state->search_focus > 0) {
+            // Toggle focused checkbox
+            ui_search_toggle_field(state, state->search_focus - 1);
             return false;
         }
-        if (down & KEY_B) {
-            ui_search_deactivate(state);
-            return false;
-        }
-        if (down & KEY_X) {
-            ui_search_deactivate(state);
-            return false;
-        }
-        if (down & KEY_Y) {
+
+        // B/X: priority 2 — exit search (only if A wasn't pressed)
+        if (!action && (down & (KEY_B | KEY_X))) action = 2;
+
+        // Y: clear query while keeping search active
+        if (!action && (down & KEY_Y)) {
             ui_search_clear(state);
             return false;
         }
 
-        // Use 3DS software keyboard for input
-        SwkbdState swkbd;
-        char kbdout[128] = {0};
-        swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 1, sizeof(kbdout)-1);
-        swkbdSetHintText(&swkbd, "Search album, artist, or song");
-        if (swkbdInputText(&swkbd, kbdout, sizeof(kbdout)) == SWKBD_BUTTON_CONFIRM) {
-            strncpy(state->search_query, kbdout, sizeof(state->search_query)-1);
-            state->search_query[sizeof(state->search_query)-1] = '\0';
-            state->scroll_offset = 0;
+        switch (action) {
+            case 1: // Select item and exit — fall through to main block
+                select_search_item(state);
+                state->search_active    = 0;
+                state->search_query[0]  = '\0';
+                state->filter_fields    = 0;
+                state->search_focus     = 0;
+                state->search_selected  = 0;
+                state->search_scroll    = 0;
+                // Intentionally NOT returning here — fall through to main block
+                // so the A handler below can perform the screen transition.
+                break;
+            case 2: // Exit search without selecting
+                ui_search_deactivate(state);
+                return false;
+            case 3: // Open keyboard
+                {
+                SwkbdState swkbd;
+                char kbdout[128] = {0};
+                swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 1, sizeof(kbdout)-1);
+                swkbdSetHintText(&swkbd, "Search album, artist, or song");
+                if (swkbdInputText(&swkbd, kbdout, sizeof(kbdout)) == SWKBD_BUTTON_CONFIRM) {
+                    strncpy(state->search_query, kbdout, sizeof(state->search_query)-1);
+                    state->search_query[sizeof(state->search_query)-1] = '\0';
+                    state->scroll_offset = 0;
+                }
+                }
+                return false;
+            default:
+                if (down & (KEY_DUP | KEY_DDOWN | KEY_DLEFT | KEY_DRIGHT))
+                    return false;
+                // Otherwise fall through to main block
+                break;
         }
-        ui_search_deactivate(state);
-        return false;
     }
 
     // Key repeat logic (simple, per frame)

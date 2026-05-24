@@ -272,6 +272,38 @@ fail, the app loads the bundled font instead.
 
 ---
 
+### Bug 5: UI Performance Slowdown with Custom Fonts (FIXED, v5)
+
+**Symptom**: Severe UI slowdown / stuttering when the app uses a custom
+non-system font (e.g. `popjoy.bcfnt`) instead of the default system font.
+
+**Root cause**: `draw_text()` in `ui.c` called `C2D_TextBufClear()` +
+`C2D_TextFontParse()` + `C2D_TextOptimize()` **every single frame** for
+every text segment. These are expensive O(n) operations — parsing a font
+and optimizing glyph indices involves scanning the entire string and
+building internal glyph lookup tables. With system fonts the overhead was
+barely noticeable, but with a custom font the parse/optimize cost is
+significantly higher, causing the UI to drop to a crawl.
+
+**Fix**: Added a text cache (`CachedText` struct + `s_text_cache[256]`)
+in `ui.c`. The cache stores pre-parsed, pre-optimized `C2D_Text` objects
+keyed by `(string, font_idx, scale)`. The expensive parse/optimize happens
+only once per unique string; subsequent frames just draw the cached object.
+LRU eviction kicks in when the cache exceeds 256 entries.
+
+**Changes to `ui.c`:**
+- Added `CachedText` struct with `str`, `font_idx`, `scale`, and `C2D_Text parsed`
+- Added `cache_get_or_create()` — parses/optimizes on first use, returns cached object on repeat
+- Added `cache_clear()` — called in `ui_cleanup()`
+- Rewrote `draw_text()` to use cached objects instead of re-parsing every frame
+- Increased `s_tbuf` from 8192 → 65536 bytes (needed because we no longer
+  clear the buffer every frame — the cache holds references into it)
+
+**Performance impact**: UI rendering should now be smooth even with custom
+fonts, as text parsing is reduced from O(frames × segments) to O(unique_strings).
+
+---
+
 ## Current Status
 
 ### Working
@@ -281,6 +313,7 @@ fail, the app loads the bundled font instead.
 - Full song download and playback (MP3 at 48kHz stereo)
 - Top screen shows track title/artist/album and play state
 - CJK character rendering (Japanese/Chinese/Korean via system fonts)
+- Custom font rendering (no more UI slowdown — text cached, v5)
 - XML entity decoding (&#34; → ", &amp; → &, etc.)
 - Volume control (L/R buttons)
 - Pause/resume (START button)
