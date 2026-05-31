@@ -2,7 +2,7 @@
 #include "config.h"
 #include <stddef.h>
 
-#define MAX_ITEMS    200
+#define MAX_ITEMS    1000
 #define MAX_NAME_LEN 64
 #define MAX_ID_LEN   32
 
