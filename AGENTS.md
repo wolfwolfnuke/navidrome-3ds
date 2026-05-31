@@ -46,7 +46,7 @@ navidrome-3ds/
 │   ├── config.c / config.h     # Config INI parser / writer (sdmc: FSUSER)
 │   ├── api.c / api.h           # Subsonic REST API (libcurl, XML parser)
 │   ├── audio.c / audio.h       # MP3 download + decode + NDSP playback
-│   ├── ui.c / ui.h             # citro2d rendering, input, search
+│   ├── ui.c / ui.h             # citro2d rendering, input
 │   ├── debug.c / debug.h       # FSUSER-based debug logging to SD
 │   └── dr_mp3.h                # Single-header MP3 decoder (external)
 ├── build/                      # Generated (objects, ELF, maps)
@@ -296,8 +296,6 @@ SCREEN_ARTISTS → A → SCREEN_ALBUMS → A → SCREEN_TRACKS → A → SCREEN_
 - Volume: L/R buttons (±0.1, clamped to [0, 1])
 - Pause: START button toggles `audio_toggle_pause()`
 - Stop: SELECT button calls `audio_stop()`
-- Search: Y opens unified search on any screen
-
 ### 5.3.1 Text Cache (Performance Fix)
 
 **Problem:** `C2D_TextFontParse()` + `C2D_TextOptimize()` are expensive
@@ -327,39 +325,7 @@ is evicted.
 cache holds references into the text buffer — we can no longer clear it
 every frame.
 
-### 5.4 Search System (Unified, v3)
-
-**Activation:** Press **Y** on Artists, Albums, or Tracks screen.
-
-**Flow:**
-1. `ui_search_activate()` — opens keyboard, resets filter, scrolls to top
-2. User types query via swkbd
-3. Query is case-insensitive (`strcasestr_simple`)
-4. Checkboxes below search bar: **Name**, **Artist**, **Album**
-5. Real-time filtering as query changes
-6. **B** or **X** exits search, **Y** clears query
-
-**Filter fields bitmask:**
-```
-bit 0 (1) = search name/title
-bit 1 (2) = search artist
-bit 2 (4) = search album
-
-Special: value 0 (no bits set) = all fields searched (backward-compatible)
-```
-
-**Screen-aware filtering:** The effective filter is the intersection of the
-user's checkbox selections and what fields are available on the current
-screen:
-- Artists: Name + Artist
-- Albums: Name + Artist
-- Tracks: Name + Artist + Album
-
-**Filtered lists are `static` in `ui_draw()`:** Each is ~32-34KB for 200
-items. Declared as local variables would overflow the 128KB main thread
-stack.
-
-### 5.5 config.c — Server Configuration
+### 5.4 config.c — Server Configuration
 
 **Paths:**
 - Primary: `sdmc:/3ds/navidrome/config.ini`
@@ -384,7 +350,7 @@ INI format via `fprintf()`. Falls back to alt path on error.
 the 3DS. Only the debug logger needed raw FSUSER due to `fopen`
 unreliability in that context.
 
-### 5.6 debug.c — SD Card Logging
+### 5.5 debug.c — SD Card Logging
 
 **Uses raw FSUSER API** (not `fopen`) — `fopen` was unreliable on this
 firmware for file logging.
@@ -449,7 +415,6 @@ Optional (not required but useful):
 | Audio thread stack | 1MB | heap malloc | Must be explicitly allocated |
 | Download buffer | 5MB | heap malloc | Fixed, never realloc |
 | s_tbuf | 64KB | heap | citro2d text buffer |
-| filtered lists | ~100KB | static BSS | 3 × 200-item filtered lists |
 | s_text_cache | ~128KB | static BSS | 256 × (128 + C2D_Text) |
 
 **Total heap pressure:** ~12-15MB during playback. The 3DS has ~128MB
@@ -480,47 +445,42 @@ space.
   `threadFree()` releases the stack → execution on freed memory
 - Thread calls `ndspSetCallback(NULL, NULL)` to suppress future callbacks
 
-### 8.4 Filtered Lists in ui.c
-- **Must be `static` in `ui_draw()`**, not local variables
-- Each filtered list is ~32-34KB; three lists = ~100KB
-- Main thread stack is ~128KB — these would overflow it
-
-### 8.5 Bounds Checking
-- All loops filling `names[]` and filtered lists must check `i < MAX_ITEMS`
+### 8.4 Bounds Checking
+- All loops filling `names[]` must check `i < MAX_ITEMS`
 - Out-of-bounds writes corrupt memory and cause data aborts
 
-### 8.6 URL Buffer Sizes
+### 8.5 URL Buffer Sizes
 - URL buffers: **≥ 2048 bytes** (Subsonic URLs with credentials can be long)
 - Name buffers: 64 bytes (`MAX_NAME_LEN`)
 - ID buffers: 32 bytes (`MAX_ID_LEN`)
 
-### 8.7 httpcDownloadData Return Code
+### 8.6 httpcDownloadData Return Code
 - `0xD840A02B` = "download pending" — **NOT an error**, continue loop
 - `0x00000000` (HTTPC_STATUS_DOWNLOAD_READY) = download complete
 
-### 8.8 LightEvent Synchronization
+### 8.7 LightEvent Synchronization
 - `audio_stop()` must call `LightEvent_Wait(&s_exit_event)` before
   `ndspChnReset(0)` — ensures thread has fully exited and freed
 - `ndspChnReset(0)` before `threadFree()` — stack still alive
 - `threadFree()` only after `ndspChnReset(0)` completes
 
-### 8.9 Font Loading
+### 8.8 Font Loading
 - System fonts may not be available (missing archive, custom firmware)
 - Always have `popjoy.bcfnt` in romfs as fallback
 - Text cache (`s_tbuf`) must be 64KB (not 8KB) because cache holds
   references into the buffer — cannot clear every frame
 
-### 8.10 APT Sleep Hook
+### 8.9 APT Sleep Hook
 - `aptSetSleepAllowed(false)` when music is playing — prevents system sleep
 - `aptHook` callback for `APTHOOK_ONSLEEP` and `APTHOOK_ONEXIT` calls
   `audio_stop()` to gracefully stop playback during sleep/exit
 
-### 8.11 Console vs citro2d
+### 8.10 Console vs citro2d
 - `consoleInit()` and citro2d **cannot coexist** — they conflict
 - Debug output goes exclusively to file (`debug_log()`)
 - No console output in the UI build
 
-### 8.12 Audio Stop Sequence
+### 8.11 Audio Stop Sequence
 Always call `audio_stop()` **before** reloading tracks or changing songs.
 The main loop in `main.c` follows this pattern:
 ```c
@@ -544,7 +504,7 @@ in detail with crash dump analysis. Quick summary:
 |---|---|---|---|
 | 1 | Crash on 2nd song switch | `ndspChnReset(0)` in thread → DSP interrupt on freed memory | Moved reset to `audio_stop()`, thread calls `ndspSetCallback(NULL,NULL)` |
 | 2 | Stack overflow → SP corrupted to BSS | 512KB thread stack too small for dr_mp3 on 48kHz stereo | Increased to 1MB, explicit malloc + canary |
-| 3 | Data abort in `ui_draw()` | Local filtered lists (~100KB) overflow main thread stack | Made lists `static`, added bounds checking |
+| 3 | Data abort in `ui_draw()` | Local filtered lists (~100KB) overflow main thread stack | Made lists `static`, added bounds checking (later removed when search was removed)
 | 4 | Black screen — no fonts | `C2D_FontLoadSystem()` returns NULL (missing archive) | Fallback to `romfs:/popjoy.bcfnt` |
 | 5 | UI crawl (single-digit FPS) | Parse/optimize text every frame with custom font | Text cache with LRU eviction (256 entries) |
 
@@ -560,8 +520,8 @@ in detail with crash dump analysis. Quick summary:
 | **START** | Pause / Resume |
 | **SELECT** | Stop playback |
 | **L / R** | Volume down / up |
-| **Y** | Open unified search (any screen) |
-| **Touch (bottom)** | Tap list items, tap checkboxes in search |
+| **Y** | N/A (reserved) |
+| **Touch (bottom)** | Tap list items |
 
 ---
 
@@ -655,11 +615,10 @@ crashes. Register analysis:
 5. **Never call `ndspChnReset(0)` in the thread** — only in `audio_stop()`
 
 ### Modifying the UI
-1. **Keep filtered lists `static`** — never make them local variables
-2. **Keep bounds checks** on all list-filling loops
-3. **Don't call `C2D_TextBufClear()` every frame** — the cache needs stable
+1. **Keep bounds checks** on all list-filling loops
+2. **Don't call `C2D_TextBufClear()` every frame** — the cache needs stable
    references into the buffer
-4. **Remember `s_tbuf` is 64KB** — don't shrink it
+3. **Remember `s_tbuf` is 64KB** — don't shrink it
 
 ### Adding a new font
 1. Place `.bcfnt` file in `romfs/`
@@ -727,8 +686,7 @@ crashes. Register analysis:
 
 1. **Always read AGENTS.md first** — it contains everything you need to
    understand the architecture, constraints, and gotchas.
-2. **Never make filtered lists local in `ui_draw()`** — they must be `static`.
-3. **Never call `ndspChnReset(0)` in the audio thread** — only in
+2. **Never call `ndspChnReset(0)` in the audio thread** — only in
    `audio_stop()`.
 4. **Never shrink URL buffers below 2048 bytes.**
 5. **Always check `i < MAX_ITEMS`** in list-filling loops.
