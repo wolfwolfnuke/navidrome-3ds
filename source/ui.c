@@ -437,8 +437,10 @@ bool ui_handle_input(UiState *state) {
         } else {
             repeat_timer++;
         }
-        // After initial delay, treat as repeated press every 4 frames
-        if (repeat_timer == 15 || (repeat_timer > 15 && (repeat_timer % 4 == 0))) {
+        // After initial delay, treat as repeated press
+        int interval = 4;
+        if (repeat_timer > 90) interval = 2;
+        if (repeat_timer == 15 || (repeat_timer > 15 && (repeat_timer % interval == 0))) {
             down |= held & (KEY_DUP | KEY_DDOWN);
         }
     } else {
@@ -465,13 +467,25 @@ bool ui_handle_input(UiState *state) {
     if (down & KEY_SELECT) audio_stop();
 
     if (sel && max > 0) {
+        int step = 1;
+        // Acceleration: After 1.5s (approx 90 frames), increase step to average 2.5 lines per repeat
+        if (repeat_timer > 90) {
+            step = (repeat_timer % 4 == 0) ? 2 : 3;
+        }
+
         if (down & KEY_DUP) {
-            if (*sel > 0) (*sel)--;
+            if (*sel > 0) {
+                *sel -= step;
+                if (*sel < 0) *sel = 0;
+            }
             if (*sel < state->scroll_offset)
                 state->scroll_offset = *sel;
         }
         if (down & KEY_DDOWN) {
-            if (*sel < max - 1) (*sel)++;
+            if (*sel < max - 1) {
+                *sel += step;
+                if (*sel > max - 1) *sel = max - 1;
+            }
             if (*sel >= state->scroll_offset + VISIBLE_ROWS)
                 state->scroll_offset = *sel - VISIBLE_ROWS + 1;
         }

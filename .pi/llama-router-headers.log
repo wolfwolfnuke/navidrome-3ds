@@ -518,3 +518,471 @@
   "provider": "llama-server"
 }
 
+{
+  "timestamp": "2026-05-31T20:51:21.412Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:52:49.853Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:53:43.882Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:53:47.259Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:53:49.059Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:54:53.613Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:54:58.058Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:56:09.074Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:56:11.603Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:56:13.694Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:56:24.285Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:56:28.010Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:56:28.767Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:56:33.853Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:56:36.699Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:56:39.183Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:56:41.937Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:56:47.422Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:56:51.069Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:56:53.370Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:57:24.264Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:57:32.648Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:57:47.330Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:57:52.233Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:57:54.768Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:58:45.475Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:58:55.277Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:58:56.120Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:59:00.260Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:59:18.683Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:59:19.335Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:59:34.424Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:59:41.463Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:59:49.272Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T20:59:49.849Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-05-31T21:00:03.370Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "LFM2.5-8B-A1B-APEX-I-Compact.gguf",
+  "provider": "llama-server"
+}
+
