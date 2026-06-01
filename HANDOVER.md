@@ -18,7 +18,8 @@ API calls), httpc (3DS native HTTP, for audio download), and dr_mp3.h
 navidrome-3ds/
 ├── Makefile
 ├── romfs/
-│   └── config.ini         # default config, user edits on SD card
+│   ├── config.ini         # default config, user edits on SD card
+│   └── popjoy.bcfnt       # fallback font (loaded if system fonts unavailable)
 └── source/
     ├── main.c             # entry point, main loop, init/cleanup
     ├── config.c/h         # reads/writes sdmc:/3ds/navidrome/config.ini
@@ -67,10 +68,38 @@ navidrome-3ds/
 - citro2d for all rendering
 - Loads system fonts via C2D_FontLoadSystem for CJK support
   (Japanese, Simplified Chinese, Traditional Chinese, Korean)
+- **Fallback font**: If system fonts fail to load (e.g. missing system archive),
+  loads `romfs:/popjoy.bcfnt` as a bundled fallback
 - UTF-8 aware draw_text: decodes codepoints, finds first font with glyph,
   renders in segments
+- **Filtered lists are static** (not stack): `filtered_artists`, `filtered_albums`,
+  `filtered_tracks` are declared as `static` in `ui_draw()` to avoid ~100KB
+  main-thread stack overflow (each list is ~32-34KB for 200 items)
+- **Bounds checking**: All loops that fill `names[]` and filtered lists check
+  `i < MAX_ITEMS` to prevent buffer overflows
 - Top screen: now-playing info (title/artist/album, play state, volume bar)
 - Bottom screen: scrollable list (Artists → Albums → Tracks → Player)
+
+### Search & Filter System (unified, v3)
+- **Unified search**: single **Y** button opens search on any screen
+  (Artists, Albums, or Tracks) — no longer screen-bound
+- **Checkbox-based filtering**: three visible checkboxes drawn below the
+  search bar — **Name**, **Artist**, **Album** — toggled by touch or A button
+- **filter_fields bitmask** in UiState: bit0=Name/title, bit1=Artist,
+  bit2=Album. If no bits set (value 0), all available fields are searched
+  (backward-compatible default)
+- **Screen-aware filtering**: Album checkbox is only effective on Tracks
+  screen; Name/Artist work on all screens. The effective filter is the
+  intersection of user's checkbox selections and the fields available on
+  the current screen
+- **Real-time filtering**: results update as you type — no "apply" step
+  needed. Scroll resets on every keystroke
+- **Expanded search_query**: increased from 64 to 128 bytes to accommodate
+  longer queries
+- **Touch input**: `hit_test_checkboxes()` maps touch coordinates to checkbox
+  indices; `ui_search_toggle_field()` flips the corresponding bitmask bit
+- **Input flow**: Y → opens search + keyboard → type query → touch checkboxes
+  to narrow → results filter live → B/X exits, Y clears query
 
 ### debug.c
 - Uses raw FSUSER API (not fopen) to write to SD card — fopen was
@@ -125,6 +154,18 @@ navidrome-3ds/
     `http://host:port/rest/endpoint?u=user&p=pass&v=...&c=...&f=xml`
     which can exceed 1024 bytes with long hostnames/passwords. All URL
     buffers in api.c are 2048 to avoid truncation warnings.
+
+12. **Main thread stack is only ~128KB** — large local variables in `ui_draw()`
+    (three filtered lists of 200 items each) would overflow the stack. All
+    filtered lists must be `static` (BSS), not local variables.
+
+13. **System fonts may not be available** on all 3DS systems. The app now
+    bundles `popjoy.bcfnt` in romfs as a fallback, loaded via
+    `C2D_FontLoad("romfs:/popjoy.bcfnt")` if `C2D_FontLoadSystem()` returns NULL.
+
+14. **Bounds checking is critical** — all loops filling `names[]` and filtered
+    lists must check `i < MAX_ITEMS` to prevent out-of-bounds writes that
+    corrupt memory and cause data aborts.
 
 ---
 
@@ -194,6 +235,75 @@ block's second `drmp3_uninit` only fires on the error path where `mp3 != NULL`
 
 ---
 
+### Bug 3: Main Thread Stack Overflow (FIXED, v3)
+
+**Symptom**: Data abort, exception type: data abort, fault status: translation
+section, access type: write. Crash occurs during `ui_draw()` when rendering
+the search/filter screen.
+
+**Crash dump analysis**: The 3DS main thread stack is only ~128KB. Three local
+variables in `ui_draw()` — `NaviArtistList filtered`, `NaviAlbumList filtered`,
+`NaviTrackList filtered` — each ~32-34KB (200 items × struct size), totaling
+~100KB. Combined with `draw_text()` locals, `draw_list()` locals, and function
+call overhead, the stack overflowed, SP ran into unmapped memory, and the next
+write triggered the data abort.
+
+**Root cause**: Large local variables in `ui_draw()` overflow the 128KB main
+thread stack.
+
+**Fix**:
+- Changed `filtered` from local variable to `static` in each switch case.
+- Added bounds checking: all loops now check `i < MAX_ITEMS`.
+- Added debug logging for bounds violations.
+
+---
+
+### Bug 4: System Font Loading Failure (FIXED, v4)
+
+**Symptom**: Log shows `ERROR: Failed to load standard system font (CFG_REGION_USA)`
+followed by `FATAL: No system fonts loaded. Skipping UI draw and exiting.`
+
+**Root cause**: `C2D_FontLoadSystem(CFG_REGION_USA)` returns NULL — the system
+font archive is missing or inaccessible on this 3DS (possibly due to firmware,
+SD card, or custom firmware configuration).
+
+**Fix**: Added fallback font loading from `romfs:/popjoy.bcfnt`. If system fonts
+fail, the app loads the bundled font instead.
+
+---
+
+### Bug 5: UI Performance Slowdown with Custom Fonts (FIXED, v5)
+
+**Symptom**: Severe UI slowdown / stuttering when the app uses a custom
+non-system font (e.g. `popjoy.bcfnt`) instead of the default system font.
+
+**Root cause**: `draw_text()` in `ui.c` called `C2D_TextBufClear()` +
+`C2D_TextFontParse()` + `C2D_TextOptimize()` **every single frame** for
+every text segment. These are expensive O(n) operations — parsing a font
+and optimizing glyph indices involves scanning the entire string and
+building internal glyph lookup tables. With system fonts the overhead was
+barely noticeable, but with a custom font the parse/optimize cost is
+significantly higher, causing the UI to drop to a crawl.
+
+**Fix**: Added a text cache (`CachedText` struct + `s_text_cache[256]`)
+in `ui.c`. The cache stores pre-parsed, pre-optimized `C2D_Text` objects
+keyed by `(string, font_idx, scale)`. The expensive parse/optimize happens
+only once per unique string; subsequent frames just draw the cached object.
+LRU eviction kicks in when the cache exceeds 256 entries.
+
+**Changes to `ui.c`:**
+- Added `CachedText` struct with `str`, `font_idx`, `scale`, and `C2D_Text parsed`
+- Added `cache_get_or_create()` — parses/optimizes on first use, returns cached object on repeat
+- Added `cache_clear()` — called in `ui_cleanup()`
+- Rewrote `draw_text()` to use cached objects instead of re-parsing every frame
+- Increased `s_tbuf` from 8192 → 65536 bytes (needed because we no longer
+  clear the buffer every frame — the cache holds references into it)
+
+**Performance impact**: UI rendering should now be smooth even with custom
+fonts, as text parsing is reduced from O(frames × segments) to O(unique_strings).
+
+---
+
 ## Current Status
 
 ### Working
@@ -203,6 +313,7 @@ block's second `drmp3_uninit` only fires on the error path where `mp3 != NULL`
 - Full song download and playback (MP3 at 48kHz stereo)
 - Top screen shows track title/artist/album and play state
 - CJK character rendering (Japanese/Chinese/Korean via system fonts)
+- Custom font rendering (no more UI slowdown — text cached, v5)
 - XML entity decoding (&#34; → ", &amp; → &, etc.)
 - Volume control (L/R buttons)
 - Pause/resume (START button)
@@ -210,6 +321,29 @@ block's second `drmp3_uninit` only fires on the error path where `mp3 != NULL`
 - Song switching (both crash bugs fixed)
 - Stack canary check on every audio_stop() — will warn in log if stack
   approaches its limit before it causes a silent crash
+- **Unified search with checkbox filters** (Y button, real-time, touch-toggleable)
+
+---
+
+## In-Flight Plans
+
+### Keep Music Playing When Screen Is Off (Lid Closed)
+
+**Status:** Implemented — see `main.c` main loop.
+
+**How it works:**
+1. `aptSetSleepAllowed(false)` is called in the main loop whenever
+   `audio_is_playing()` returns true — prevents the system from sleeping
+   while music is playing.
+2. `aptHook` callback registered for `APT_HOOK_ONSLEEP` and
+   `APT_HOOK_ONEXIT` — calls `audio_stop()` gracefully on forced sleep
+   or app exit.
+3. `aptSetSleepAllowed(true)` called during cleanup before exit.
+
+**Files modified:** `source/main.c` only (conditional block in main loop +
+APT hook registration).
+
+**No changes needed to:** `audio.c`, `audio.h`, `ui.c`, `ui.h`, `api.c`.
 
 ---
 
@@ -221,6 +355,9 @@ dkp-pacman -S 3ds-dev 3ds-curl 3ds-mbedtls
 
 # Drop dr_mp3.h into source/ from:
 # https://github.com/mackron/dr_libs
+
+# Ensure fallback font is in romfs/:
+# romfs/popjoy.bcfnt (bundled font for when system fonts are unavailable)
 
 # Build
 make clean && make

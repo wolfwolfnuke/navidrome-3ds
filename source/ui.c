@@ -34,11 +34,67 @@
 
 static C2D_TextBuf s_tbuf;
 
+
+
 // ---------------------------------------------------------------------------
-// Font management — load all system fonts for full Unicode coverage
+// Font management - load all system fonts for full Unicode coverage
 // ---------------------------------------------------------------------------
 #define MAX_FONTS 8
 static C2D_Font s_fonts[MAX_FONTS];
+
+// ---------------------------------------------------------------------------
+// Text cache - parse/optimize once, draw every frame.
+// Without this, draw_text() re-parses and re-optimizes every frame,
+// which is extremely slow (especially with non-system fonts).
+// ---------------------------------------------------------------------------
+#define MAX_CACHED_TEXT 256
+
+typedef struct {
+    char     str[128];
+    int      font_idx;
+    float    scale;
+    C2D_Text parsed;   // pre-parsed, pre-optimized text object
+} CachedText;
+
+static CachedText s_text_cache[MAX_CACHED_TEXT];
+static int        s_cache_count = 0;
+
+static CachedText* cache_get_or_create(const char *str, int font_idx, float scale) {
+    // Search for existing entry
+    for (int i = 0; i < s_cache_count; i++) {
+        if (s_text_cache[i].font_idx == font_idx &&
+            s_text_cache[i].scale == scale &&
+            strcmp(s_text_cache[i].str, str) == 0) {
+            return &s_text_cache[i];
+        }
+    }
+    // Evict oldest if full
+    if (s_cache_count >= MAX_CACHED_TEXT) {
+        // Shift entries down, evicting the oldest
+        for (int i = 0; i < MAX_CACHED_TEXT - 1; i++) {
+            s_text_cache[i] = s_text_cache[i + 1];
+        }
+        s_cache_count--;
+    }
+    // Insert new entry at the end (newest)
+    CachedText *entry = &s_text_cache[s_cache_count++];
+    strncpy(entry->str, str, sizeof(entry->str) - 1);
+    entry->str[sizeof(entry->str) - 1] = '\0';
+    entry->font_idx = font_idx;
+    entry->scale = scale;
+    // Parse and optimize into the cached text object
+    if (s_fonts[font_idx]) {
+        C2D_TextFontParse(&entry->parsed, s_fonts[font_idx], s_tbuf, str);
+    } else {
+        C2D_TextParse(&entry->parsed, s_tbuf, str);
+    }
+    C2D_TextOptimize(&entry->parsed);
+    return entry;
+}
+
+static void cache_clear(void) {
+    s_cache_count = 0;
+}
 static int      s_font_count = 0;
 
 // System font region codes (3DS has separate fonts per region/script)
@@ -52,20 +108,23 @@ static const CFG_Region s_font_regions[] = {
 
 static void fonts_init(void) {
     debug_log("[UI] fonts_init called");
-    // Always load the standard font first
+    // Try to load the standard system font first
     s_fonts[s_font_count] = C2D_FontLoadSystem(CFG_REGION_USA);
-    if (s_fonts[s_font_count]) s_font_count++;
-    else debug_log("[UI] ERROR: Failed to load standard system font (CFG_REGION_USA)");
-    debug_log("[UI] Loaded standard font, count=%d", s_font_count);
-
-    // Load CJK fonts
-    for (size_t i = 1; i < sizeof(s_font_regions)/sizeof(s_font_regions[0]); i++) {
-        C2D_Font f = C2D_FontLoadSystem(s_font_regions[i]);
-        if (f && s_font_count < MAX_FONTS) {
-            s_fonts[s_font_count++] = f;
-            debug_log("[UI] Loaded CJK font region %d, count=%d", (int)i, s_font_count);
+    if (s_fonts[s_font_count]) {
+        s_font_count++;
+        debug_log("[UI] Loaded system font");
+    } else {
+        debug_log("[UI] ERROR: Failed to load standard system font (CFG_REGION_USA), trying fallback .bcfnt from romfs");
+        // Fallback: load bundled font from romfs
+        C2D_Font fallback = C2D_FontLoad("romfs:/popjoy.bcfnt");
+        if (fallback) {
+            s_fonts[s_font_count++] = fallback;
+            debug_log("[UI] Loaded fallback font from romfs/popjoy.bcfnt");
+        } else {
+            debug_log("[UI] FATAL: No fonts available at all!");
         }
     }
+    // Optionally try to load CJK fonts if you have them bundled as .bcfnt files
     debug_log("[UI] fonts_init complete, total fonts=%d", s_font_count);
 }
 
@@ -106,18 +165,10 @@ static uint32_t utf8_next(const char **str) {
 
 // ---------------------------------------------------------------------------
 // draw_text: renders UTF-8 string using system fonts for full CJK support
+// Uses a text cache so parse/optimize happen once per unique string+font+scale.
 // ---------------------------------------------------------------------------
 static void draw_text(float x, float y, float sz, u32 color, const char *str) {
-    debug_log("[UI] draw_text called: x=%.2f, y=%.2f, sz=%.2f, color=0x%08X, str=%.32s", x, y, sz, color, str ? str : "(null)");
-    if (!str || !str[0]) {
-        debug_log("[UI] draw_text: empty or null string");
-        return;
-    }
-
-    // Build a segment list: split the string into runs, each rendered
-    // with the first font that contains the glyph.
-    // For simplicity, render character by character using the right font.
-    // We accumulate runs of characters that share the same font.
+    if (!str || !str[0]) return;
 
     char seg[256];
     int  seg_font = 0;
@@ -131,7 +182,7 @@ static void draw_text(float x, float y, float sz, u32 color, const char *str) {
         int seq_len = (int)(p - before);
 
         // Find which font has this glyph
-        int found_font = 0; // default to font 0
+        int found_font = 0;
         for (int fi = 0; fi < s_font_count; fi++) {
             if (s_fonts[fi] && C2D_FontGlyphIndexFromCodePoint(s_fonts[fi], cp) != 0) {
                 found_font = fi;
@@ -142,20 +193,15 @@ static void draw_text(float x, float y, float sz, u32 color, const char *str) {
         // If font changed or buffer full, flush current segment
         if ((found_font != seg_font || seg_len + seq_len >= (int)sizeof(seg) - 1) && seg_len > 0) {
             seg[seg_len] = '\0';
-            C2D_Text txt;
-            C2D_TextBufClear(s_tbuf);
-            if (s_fonts[seg_font])
-                C2D_TextFontParse(&txt, s_fonts[seg_font], s_tbuf, seg);
-            else
-                C2D_TextParse(&txt, s_tbuf, seg);
-            C2D_TextOptimize(&txt);
+
+            // Use cached text object - parse/optimize only once per unique string
+            CachedText *cached = cache_get_or_create(seg, seg_font, sz);
 
             // Measure width to advance cur_x
             float tw = 0, th = 0;
-            C2D_TextGetDimensions(&txt, sz, sz, &tw, &th);
-            C2D_DrawText(&txt, C2D_WithColor | C2D_AtBaseline,
+            C2D_TextGetDimensions(&cached->parsed, sz, sz, &tw, &th);
+            C2D_DrawText(&cached->parsed, C2D_WithColor | C2D_AtBaseline,
                          cur_x, y, 0.5f, sz, sz, color);
-            debug_log("[UI] draw_text: drew segment '%s' with font %d at x=%.2f", seg, seg_font, cur_x);
             cur_x += tw;
             seg_len = 0;
         }
@@ -168,18 +214,12 @@ static void draw_text(float x, float y, float sz, u32 color, const char *str) {
     // Flush remaining segment
     if (seg_len > 0) {
         seg[seg_len] = '\0';
-        C2D_Text txt;
-        C2D_TextBufClear(s_tbuf);
-        if (s_fonts[seg_font])
-            C2D_TextFontParse(&txt, s_fonts[seg_font], s_tbuf, seg);
-        else
-            C2D_TextParse(&txt, s_tbuf, seg);
-        C2D_TextOptimize(&txt);
-        C2D_DrawText(&txt, C2D_WithColor | C2D_AtBaseline,
+        CachedText *cached = cache_get_or_create(seg, seg_font, sz);
+        float tw = 0, th = 0;
+        C2D_TextGetDimensions(&cached->parsed, sz, sz, &tw, &th);
+        C2D_DrawText(&cached->parsed, C2D_WithColor | C2D_AtBaseline,
                      cur_x, y, 0.5f, sz, sz, color);
-        debug_log("[UI] draw_text: drew final segment '%s' with font %d at x=%.2f", seg, seg_font, cur_x);
     }
-    debug_log("[UI] draw_text complete");
 }
 
 static void draw_rect(float x, float y, float w, float h, u32 color) {
@@ -187,11 +227,21 @@ static void draw_rect(float x, float y, float w, float h, u32 color) {
 }
 
 // Draw a scrollable list on the bottom screen
+// If draw_header is 0, skip the header bar (caller draws it instead)
 static void draw_list(const char **names, int count,
-                       int selected, int scroll, const char *title) {
-    // Header bar
-    draw_rect(0, 0, BOT_W, 30, COL_HEADER_BG);
-    draw_text(8, 20, 0.55f, COL_ACCENT, title);
+                       int selected, int scroll, const char *title,
+                       int draw_header) {
+    if (count == 0) {
+        draw_rect(0, 0, BOT_W, BOT_H, COL_BG);
+        draw_text(8, BOT_H/2 - 8, 0.5f, COL_DIM, "No results found.");
+        return;
+    }
+
+    if (draw_header) {
+        // Header bar
+        draw_rect(0, 0, BOT_W, 30, COL_HEADER_BG);
+        draw_text(8, 20, 0.55f, COL_ACCENT, title);
+    }
 
     // Items
     for (int i = 0; i < VISIBLE_ROWS; i++) {
@@ -256,47 +306,6 @@ static void draw_now_playing(const UiState *state) {
 }
 
 // ---------------------------------------------------------------------------
-// Search helpers
-// ---------------------------------------------------------------------------
-
-static int strcasestr_simple(const char *haystack, const char *needle) {
-    if (!needle[0]) return 1;
-    for (const char *h = haystack; *h; h++) {
-        int i = 0;
-        while (needle[i] && h[i] && (tolower(h[i]) == tolower(needle[i]))) i++;
-        if (!needle[i]) return 1;
-    }
-    return 0;
-}
-
-static void filter_artists(const NaviArtistList *src, NaviArtistList *dst, const char *query) {
-    dst->count = 0;
-    for (int i = 0; i < src->count; i++) {
-        if (strcasestr_simple(src->items[i].name, query) || strcasestr_simple(src->items[i].artist, query)) {
-            dst->items[dst->count++] = src->items[i];
-        }
-    }
-}
-
-static void filter_albums(const NaviAlbumList *src, NaviAlbumList *dst, const char *query) {
-    dst->count = 0;
-    for (int i = 0; i < src->count; i++) {
-        if (strcasestr_simple(src->items[i].name, query) || strcasestr_simple(src->items[i].artist, query)) {
-            dst->items[dst->count++] = src->items[i];
-        }
-    }
-}
-
-static void filter_tracks(const NaviTrackList *src, NaviTrackList *dst, const char *query) {
-    dst->count = 0;
-    for (int i = 0; i < src->count; i++) {
-        if (strcasestr_simple(src->items[i].title, query) || strcasestr_simple(src->items[i].artist, query) || strcasestr_simple(src->items[i].album, query)) {
-            dst->items[dst->count++] = src->items[i];
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
 // Public
 // ---------------------------------------------------------------------------
 
@@ -339,51 +348,65 @@ void ui_draw(const UiState *state, C3D_RenderTarget *top, C3D_RenderTarget *bott
     // Build name arrays for the list
     static const char *names[MAX_ITEMS];
 
-    // Draw search bar if active
-    if (state->search_active) {
-        draw_rect(0, 0, BOT_W, 30, COL_HEADER_BG);
-        char bar[80];
-        snprintf(bar, sizeof(bar), "Search: %s", state->search_query);
-        draw_text(8, 20, 0.55f, COL_ACCENT, bar);
-    }
     switch (state->screen) {
         case SCREEN_ARTISTS: {
-            NaviArtistList filtered;
             const NaviArtistList *src = &state->artists;
-            if (state->search_active && state->search_type == 0 && state->search_query[0]) {
-                filter_artists(&state->artists, &filtered, state->search_query);
-                src = &filtered;
-            }
-            for (int i = 0; i < src->count; i++)
+            int display_count = state->artists.count;
+            int display_selected = state->selected_artist;
+            int display_scroll = state->scroll_offset;
+            for (int i = 0; i < display_count && i < MAX_ITEMS; i++) {
                 names[i] = src->items[i].name;
-            draw_list(names, src->count,
-                      state->selected_artist, state->scroll_offset, state->search_active ? "Artists (Search)" : "Artists");
+            }
+            // Clamp selection to prevent out-of-bounds highlight
+            if (display_count > 0 && display_selected >= display_count)
+                display_selected = display_count - 1;
+            if (display_count == 0)
+                display_selected = 0;
+            if (display_count > MAX_ITEMS) debug_log("[BOUNDS] ARTISTS: display_count=%d > MAX_ITEMS=%d", display_count, MAX_ITEMS);
+            draw_list(names, display_count,
+                      display_selected, display_scroll,
+                      "Artists",
+                      true);
             break;
         }
         case SCREEN_ALBUMS: {
-            NaviAlbumList filtered;
             const NaviAlbumList *src = &state->albums;
-            if (state->search_active && state->search_type == 1 && state->search_query[0]) {
-                filter_albums(&state->albums, &filtered, state->search_query);
-                src = &filtered;
-            }
-            for (int i = 0; i < src->count; i++)
+            int display_count = state->albums.count;
+            int display_selected = state->selected_album;
+            int display_scroll = state->scroll_offset;
+            for (int i = 0; i < display_count && i < MAX_ITEMS; i++) {
                 names[i] = src->items[i].name;
-            draw_list(names, src->count,
-                      state->selected_album, state->scroll_offset, state->search_active ? "Albums (Search)" : "Albums");
+            }
+            // Clamp selection to prevent out-of-bounds highlight
+            if (display_count > 0 && display_selected >= display_count)
+                display_selected = display_count - 1;
+            if (display_count == 0)
+                display_selected = 0;
+            if (display_count > MAX_ITEMS) debug_log("[BOUNDS] ALBUMS: display_count=%d > MAX_ITEMS=%d", display_count, MAX_ITEMS);
+            draw_list(names, display_count,
+                      display_selected, display_scroll,
+                      "Albums",
+                      true);
             break;
         }
         case SCREEN_TRACKS: {
-            NaviTrackList filtered;
             const NaviTrackList *src = &state->tracks;
-            if (state->search_active && state->search_type == 2 && state->search_query[0]) {
-                filter_tracks(&state->tracks, &filtered, state->search_query);
-                src = &filtered;
-            }
-            for (int i = 0; i < src->count; i++)
+            int display_count = state->tracks.count;
+            int display_selected = state->selected_track;
+            int display_scroll = state->scroll_offset;
+            for (int i = 0; i < display_count && i < MAX_ITEMS; i++) {
                 names[i] = src->items[i].title;
-            draw_list(names, src->count,
-                      state->selected_track, state->scroll_offset, state->search_active ? "Tracks (Search)" : "Tracks");
+            }
+            // Clamp selection to prevent out-of-bounds highlight
+            if (display_count > 0 && display_selected >= display_count)
+                display_selected = display_count - 1;
+            if (display_count == 0)
+                display_selected = 0;
+            if (display_count > MAX_ITEMS) debug_log("[BOUNDS] TRACKS: display_count=%d > MAX_ITEMS=%d", display_count, MAX_ITEMS);
+            draw_list(names, display_count,
+                      display_selected, display_scroll,
+                      "Tracks",
+                      true);
             break;
         }
         case SCREEN_PLAYER:
@@ -394,42 +417,10 @@ void ui_draw(const UiState *state, C3D_RenderTarget *top, C3D_RenderTarget *bott
             draw_text(8, 140, 0.45f, COL_DIM, "B      - Back to track list");
             break;
     }
+
 }
 
-// --- Search input helpers ---
-void ui_search_activate(UiState *state, int type) {
-    state->search_active = 1;
-    state->search_type = type;
-    state->search_query[0] = '\0';
-    state->scroll_offset = 0;
-}
-void ui_search_deactivate(UiState *state) {
-    state->search_active = 0;
-    state->search_query[0] = '\0';
-    state->scroll_offset = 0;
-}
-void ui_search_input(UiState *state, char c) {
-    size_t len = strlen(state->search_query);
-    if (len < sizeof(state->search_query) - 1) {
-        state->search_query[len] = c;
-        state->search_query[len+1] = '\0';
-        state->scroll_offset = 0;
-    }
-}
-void ui_search_backspace(UiState *state) {
-    size_t len = strlen(state->search_query);
-    if (len > 0) {
-        state->search_query[len-1] = '\0';
-        state->scroll_offset = 0;
-    }
-}
-void ui_search_apply(UiState *state) {
-    state->scroll_offset = 0;
-}
-void ui_search_clear(UiState *state) {
-    state->search_query[0] = '\0';
-    state->scroll_offset = 0;
-}
+
 
 bool ui_handle_input(UiState *state) {
     hidScanInput();
@@ -438,27 +429,6 @@ bool ui_handle_input(UiState *state) {
     static u32 repeat_timer = 0;
     static u32 last_held = 0;
 
-    // --- Search input mode ---
-    if (state->search_active) {
-        // Accept text input (A-Z, 0-9, space, backspace, etc.)
-        // For demo: use X to exit search, Y to clear, A to apply, B to backspace
-        if (down & KEY_X) { ui_search_deactivate(state); return false; }
-        if (down & KEY_Y) { ui_search_clear(state); return false; }
-        if (down & KEY_A) { ui_search_apply(state); return false; }
-        if (down & KEY_B) { ui_search_backspace(state); return false; }
-        // Use 3DS software keyboard for input
-        SwkbdState swkbd;
-        char kbdout[64] = {0};
-        swkbdInit(&swkbd, SWKBD_TYPE_NORMAL, 1, sizeof(kbdout)-1);
-        swkbdSetHintText(&swkbd, "Enter search query");
-        if (swkbdInputText(&swkbd, kbdout, sizeof(kbdout)) == SWKBD_BUTTON_CONFIRM) {
-            strncpy(state->search_query, kbdout, sizeof(state->search_query)-1);
-            state->search_query[sizeof(state->search_query)-1] = '\0';
-            state->scroll_offset = 0;
-        }
-        ui_search_deactivate(state);
-        return false;
-    }
 
     // Key repeat logic (simple, per frame)
     if (held & (KEY_DUP | KEY_DDOWN)) {
@@ -467,8 +437,10 @@ bool ui_handle_input(UiState *state) {
         } else {
             repeat_timer++;
         }
-        // After initial delay, treat as repeated press every 4 frames
-        if (repeat_timer == 15 || (repeat_timer > 15 && (repeat_timer % 4 == 0))) {
+        // After initial delay, treat as repeated press
+        int interval = 4;
+        if (repeat_timer > 90) interval = 2;
+        if (repeat_timer == 15 || (repeat_timer > 15 && (repeat_timer % interval == 0))) {
             down |= held & (KEY_DUP | KEY_DDOWN);
         }
     } else {
@@ -495,20 +467,28 @@ bool ui_handle_input(UiState *state) {
     if (down & KEY_SELECT) audio_stop();
 
     if (sel && max > 0) {
+        int step = 1;
+        // Acceleration: After 1.5s (approx 90 frames), increase step to average 2.5 lines per repeat
+        if (repeat_timer > 90) {
+            step = (repeat_timer % 4 == 0) ? 2 : 3;
+        }
+
         if (down & KEY_DUP) {
-            if (*sel > 0) (*sel)--;
+            if (*sel > 0) {
+                *sel -= step;
+                if (*sel < 0) *sel = 0;
+            }
             if (*sel < state->scroll_offset)
                 state->scroll_offset = *sel;
         }
         if (down & KEY_DDOWN) {
-            if (*sel < max - 1) (*sel)++;
+            if (*sel < max - 1) {
+                *sel += step;
+                if (*sel > max - 1) *sel = max - 1;
+            }
             if (*sel >= state->scroll_offset + VISIBLE_ROWS)
                 state->scroll_offset = *sel - VISIBLE_ROWS + 1;
         }
-        // Start search: L = artist, R = album, START = track
-        if (down & KEY_L) { ui_search_activate(state, 0); return false; }
-        if (down & KEY_R) { ui_search_activate(state, 1); return false; }
-        if (down & KEY_START) { ui_search_activate(state, 2); return false; }
     }
 
     if (down & KEY_A) {
@@ -531,6 +511,7 @@ bool ui_handle_input(UiState *state) {
         }
     }
 
+
     if (down & KEY_B) {
         switch (state->screen) {
             case SCREEN_ALBUMS:
@@ -547,7 +528,7 @@ bool ui_handle_input(UiState *state) {
                 state->screen        = SCREEN_TRACKS;
                 state->scroll_offset = state->selected_track;
                 if (state->scroll_offset > 0) state->scroll_offset--;
-                // Signal stop but don't block — main loop calls audio_stop()
+                // Signal stop but don't block - main loop calls audio_stop()
                 // after ui_handle_input returns true
                 return true;  // main.c handles the actual stop
             default:
@@ -560,13 +541,15 @@ bool ui_handle_input(UiState *state) {
 
 void ui_init(void) {
     debug_log("[ENTER] ui_init()");
-    s_tbuf = C2D_TextBufNew(8192);
+    // Larger buffer needed because we no longer clear it every frame -
+    // the cache holds parsed text objects that reference into this buffer.
+    s_tbuf = C2D_TextBufNew(65536);
     fonts_init();
 }
 
 void ui_cleanup(void) {
     debug_log("[ENTER] ui_cleanup()");
-    debug_log("[ENTER] ui_cleanup()");
+    cache_clear();
     fonts_cleanup();
     C2D_TextBufDelete(s_tbuf);
 }
