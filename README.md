@@ -48,17 +48,6 @@ username=admin
 password=yourpassword
 ```
 
-## Search
-
-Press **Y** on any screen (Artists, Albums, or Tracks) to open the unified search bar.
-Type your query using the 3DS keyboard. Below the search bar you'll see **checkboxes** for each searchable field:
-
-- **Name** — matches the primary name (artist name on Artists screen, album name on Albums screen, song title on Tracks screen)
-- **Artist** — matches the artist name
-- **Album** — matches the album name (only available on Tracks screen)
-
-Toggle checkboxes by **touching** them on the bottom screen, or by pressing **A** to toggle the Name field. The search filters results in real-time as you type. Press **B** or **X** to exit search, **Y** to clear the query.
-
 ## Controls
 
 | Button | Action |
@@ -69,8 +58,6 @@ Toggle checkboxes by **touching** them on the bottom screen, or by pressing **A*
 | START | Pause/Resume |
 | SELECT | Stop |
 | L/R | Volume Down/Up |
-| Y | Open unified search |
-| Touch Screen | Tap to select item, tap checkboxes to toggle search fields |
 
 ## Architecture Notes
 
