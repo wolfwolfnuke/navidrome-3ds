@@ -22,6 +22,7 @@ typedef struct {
     int   scroll_offset;
 
     bool  loading;
+    C2D_Image album_cover;
     char  status_msg[128];
 } UiState;
 

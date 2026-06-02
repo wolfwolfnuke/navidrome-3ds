@@ -278,6 +278,17 @@ static void draw_now_playing(const UiState *state) {
         // Show current track info from UiState
         if (state->tracks.count > 0 && state->selected_track < state->tracks.count) {
             const NaviTrack *t = &state->tracks.items[state->selected_track];
+            
+            // Draw album cover if available
+            if (state->album_cover.tex) {
+                float coverX = TOP_W - 100 - 8; // 100px wide, 8px margin
+                float coverY = 40;
+                float coverW = 100;
+                float coverH = 100;
+                C2D_DrawImageAt(state->album_cover, coverX, coverY, 0.5f, NULL, 1.0f, 1.0f);
+            }
+
+            // Draw text info to the left of the album cover
             draw_text(8, 55,  0.5f,  COL_TEXT, t->title);
             draw_text(8, 78,  0.45f, COL_DIM,  t->artist);
             draw_text(8, 98,  0.42f, COL_DIM,  t->album);
@@ -545,11 +556,17 @@ void ui_init(void) {
     // the cache holds parsed text objects that reference into this buffer.
     s_tbuf = C2D_TextBufNew(65536);
     fonts_init();
+    // Initialize album cover image
+    memset(&state->album_cover, 0, sizeof(C2D_Image));
 }
 
 void ui_cleanup(void) {
     debug_log("[ENTER] ui_cleanup()");
     cache_clear();
     fonts_cleanup();
+    // Clean up album cover image
+    if (state->album_cover.tex) {
+        C2D_SpriteSheetFreeImage(state->album_cover.tex);
+    }
     C2D_TextBufDelete(s_tbuf);
 }
