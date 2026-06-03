@@ -19,7 +19,6 @@ jobs:
       run: sudo dkp-pacman --noconfirm -S 3ds-dev 3ds-mbedtls 3ds-curl 
     - name: make
       run: export DEVKITPRO=/opt/devkitpro/ && export DEVKITARM=/opt/devkitpro/devkitARM && make clean && make
-    - run: echo hello > path/to/artifact/world.txt
     - uses: actions/upload-artifact@v7
       with:
         path: navidrome.3dsx
