@@ -44,12 +44,20 @@ static Buffer buf_new(void) {
     b.cap  = 4096;
     b.len  = 0;
     b.data = malloc(b.cap);
-    if (b.data) b.data[0] = '\0';
+    if (b.data) {
+        b.data[0] = '\0';
+        debug_log("[API] Buffer allocated: capacity=%zu", b.cap);
+    } else {
+        debug_log("[API] Buffer allocation failed");
+    }
     return b;
 }
 
 static void buf_free(Buffer *b) {
-    if (b->data) free(b->data);
+    if (b->data) {
+        free(b->data);
+        debug_log("[API] Buffer freed: capacity=%zu, length=%zu", b->cap, b->len);
+    }
     b->data = NULL;
     b->len  = 0;
     b->cap  = 0;
@@ -101,6 +109,7 @@ static void build_url(char *out, size_t len, const char *endpoint,
         g_cfg.username,
         g_cfg.password,
         extra_params ? extra_params : "");
+    debug_log("[API] Built URL for endpoint '%s': %s", endpoint, out);
 }
 
 // ---------------------------------------------------------------------------
@@ -185,10 +194,21 @@ int api_get_album_cover(const char *album_id, C2D_Image *out) {
         return -1;
     }
 
+    // Detect image format from the first few bytes
+    const char *format = "unknown";
+    if (buf.len >= 8) {
+        if (buf.data[0] == 0xFF && buf.data[1] == 0xD8) {
+            format = "JPEG";
+        } else if (buf.data[0] == 0x89 && buf.data[1] == 0x50 && buf.data[2] == 0x4E && buf.data[3] == 0x47) {
+            format = "PNG";
+        }
+    }
+    debug_log("[API] Album cover format: %s, size: %zu bytes", format, buf.len);
+
     // Load the image data into a C2D_Image
     out->tex = C2D_SpriteSheetLoadImageMem(buf.data, buf.len);
     if (!out->tex) {
-        debug_log("[API] Failed to load album cover image. Image format may not be supported.");
+        debug_log("[API] Failed to load album cover image. Image format (%s) may not be supported.", format);
         buf_free(&buf);
         return -1;
     }
@@ -196,7 +216,7 @@ int api_get_album_cover(const char *album_id, C2D_Image *out) {
     // Set default dimensions if not available
     out->params.width = 100;
     out->params.height = 100;
-    debug_log("[API] Successfully loaded album cover image");
+    debug_log("[API] Successfully loaded album cover image (format: %s)", format);
     buf_free(&buf);
     return 0;
 }
@@ -274,17 +294,21 @@ int api_get_artists(NaviArtistList *out) {
 }
 
 int api_get_albums(const char *artist_id, NaviAlbumList *out) {
+    debug_log("[API] api_get_albums called for artist_id=%s", artist_id);
     out->count = 0;
     char extra[128], url[2048];
     snprintf(extra, sizeof(extra), "&id=%s", artist_id);
     build_url(url, sizeof(url), "getArtist", extra);
 
     Buffer buf = buf_new();
-    if (http_get(url, &buf) != 200 || !buf.data) {
+    int http_code = http_get(url, &buf);
+    if (http_code != 200 || !buf.data) {
+        debug_log("[API] api_get_albums failed, HTTP code: %d", http_code);
         buf_free(&buf);
         return -1;
     }
 
+    debug_log("[API] Parsing album data for artist_id=%s", artist_id);
     const char *p = buf.data;
     while (out->count < MAX_ITEMS) {
         p = xml_next_tag(p, "<album ");
@@ -301,26 +325,34 @@ int api_get_albums(const char *artist_id, NaviAlbumList *out) {
         xml_attr(p, "songCount", tmp, sizeof(tmp));
         al->songCount = tmp[0] ? atoi(tmp) : 0;
 
+        debug_log("[API] Parsed album: id=%s, name=%s, artist=%s, year=%d, songCount=%d", 
+                 al->id, al->name, al->artist, al->year, al->songCount);
+
         if (al->id[0]) out->count++;
         p++;
     }
 
+    debug_log("[API] api_get_albums loaded %d albums for artist_id=%s", out->count, artist_id);
     buf_free(&buf);
     return 0;
 }
 
 int api_get_tracks(const char *album_id, NaviTrackList *out) {
+    debug_log("[API] api_get_tracks called for album_id=%s", album_id);
     out->count = 0;
     char extra[128], url[2048];
     snprintf(extra, sizeof(extra), "&id=%s", album_id);
     build_url(url, sizeof(url), "getAlbum", extra);
 
     Buffer buf = buf_new();
-    if (http_get(url, &buf) != 200 || !buf.data) {
+    int http_code = http_get(url, &buf);
+    if (http_code != 200 || !buf.data) {
+        debug_log("[API] api_get_tracks failed, HTTP code: %d", http_code);
         buf_free(&buf);
         return -1;
     }
 
+    debug_log("[API] Parsing track data for album_id=%s", album_id);
     const char *p = buf.data;
     while (out->count < MAX_ITEMS) {
         p = xml_next_tag(p, "<song ");
@@ -338,16 +370,22 @@ int api_get_tracks(const char *album_id, NaviTrackList *out) {
         xml_attr(p, "track",    tmp, sizeof(tmp));
         t->track = tmp[0] ? atoi(tmp) : 0;
 
+        debug_log("[API] Parsed track: id=%s, title=%s, artist=%s, album=%s, duration=%d, track=%d", 
+                 t->id, t->title, t->artist, t->album, t->duration, t->track);
+
         if (t->id[0]) out->count++;
         p++;
     }
 
+    debug_log("[API] api_get_tracks loaded %d tracks for album_id=%s", out->count, album_id);
     buf_free(&buf);
     return 0;
 }
 
 void api_stream_url(const char *track_id, char *buf, size_t len) {
+    debug_log("[API] api_stream_url called for track_id=%s", track_id);
     char extra[128];
     snprintf(extra, sizeof(extra), "&id=%s&format=mp3&maxBitRate=128", track_id);
     build_url(buf, len, "stream", extra);
+    debug_log("[API] Generated stream URL: %s", buf);
 }

@@ -65,7 +65,7 @@ navidrome-3ds/
 sudo ./install-devkitpro-pacman
 
 # Install 3DS toolchain
-dkp-pacman -S 3ds-dev 3ds-curl 3ds-mbedtls
+dkp-pacman -S 3ds-dev 3ds-curl 3ds-mbedtls 3ds-citro2d 3ds-citro3d
 
 # Fetch the MP3 decoder (NOT bundled in git)
 curl -o source/dr_mp3.h \
@@ -86,19 +86,22 @@ project root by the Makefile's `$(OUTPUT).3dsx` target).
 ### Key Makefile Details
 
 - **Rules include**: `$(DEVKITARM)/3ds_rules` (not `3dsx_rules`)
-- **Arch flags**: `-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft`
+- **Arch flags**: `-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft -mword-relocations -fomit-frame-pointer`
 - **Optimization**: `-O2` with frame pointer omitted
 - **Link order is deliberate and matters**:
   ```
   -lcitro2d -lcitro3d -lcurl \
     -lmbedtls -lmbedx509 -lmbedcrypto \
-    -lz -lctru -lm              # -lmbedcrypto appears twice; -lctru last
+    -lz -lctru -lmbedcrypto -lm              # -lmbedcrypto appears twice; -lctru last
   ```
   The duplicate `-lmbedcrypto` and trailing `-lctru` resolve circular
   dependency quirks in the devkitPro 3DS SDK.
 - **ROMFS**: `romfs/` directory is embedded into the `.3dsx` at build time
-  via `--romfs=` flag. At runtime, files are accessed via `romfs:/path`.
-- **SMDH**: Generated from `navidrome.png` or `icon.png` using `smdhtool`.
+  via `--romfs=$(CURDIR)/romfs` flag. At runtime, files are accessed via `romfs:/path`.
+- **SMDH**: Generated from `navidrome.png` using `smdhtool`:
+```bash
+smdhtool -c navidrome.smdh -i navidrome.png -s "Navidrome 3DS" -l "Navidrome 3DS Client" -p "Sam" -v "1.0.0"
+```
 
 ---
 
@@ -178,13 +181,15 @@ passwords push URLs past 1024 bytes.
 
 **Key types:**
 ```c
-#define MAX_ITEMS    200   // max artists/albums/tracks per query
+#define MAX_ITEMS    1000   // max artists/albums/tracks per query
 #define MAX_NAME_LEN 64    // max chars for names/titles
 #define MAX_ID_LEN   32    // max chars for Subsonic IDs
 
 typedef struct { char id[MAX_ID_LEN]; char name[MAX_NAME_LEN]; } NaviArtist;
 typedef struct { char id[MAX_ID_LEN]; char name[MAX_NAME_LEN];
                  char artist[MAX_NAME_LEN]; int year; int songCount; } NaviAlbum;
+
+**Album Art**: The `api_get_album_cover()` function fetches album art via the Subsonic `getCoverArt` endpoint and stores it in a `C2D_Image` struct.
 typedef struct { char id[MAX_ID_LEN]; char title[MAX_NAME_LEN];
                  char artist[MAX_NAME_LEN]; char album[MAX_NAME_LEN];
                  int duration; int track; } NaviTrack;
@@ -275,6 +280,8 @@ SCREEN_ARTISTS → A → SCREEN_ALBUMS → A → SCREEN_TRACKS → A → SCREEN_
      └────────────────┴─────────────────┴─────────────────┘
 ```
 
+**Album Art**: The `SCREEN_PLAYER` screen displays album art fetched via `api_get_album_cover()`. The `UiState` struct includes a `C2D_Image album_cover` field for this purpose.
+
 **Screen dimensions:**
 - Top: 400 × 240
 - Bottom: 320 × 240
@@ -284,9 +291,7 @@ SCREEN_ARTISTS → A → SCREEN_ALBUMS → A → SCREEN_TRACKS → A → SCREEN_
 **Font loading:**
 1. Try `C2D_FontLoadSystem(CFG_REGION_USA)` (Latin + basic)
 2. Fallback: `C2D_FontLoad("romfs:/popjoy.bcfnt")` (bundled bitmap font)
-3. System font region array (for CJK): `USA → JPN → CHN → TWN → KOR`
-   (only loaded if you bundle separate `.bcfnt` files — currently the app
-   only loads USA and falls back to popjoy.bcfnt)
+3. System font: `CFG_REGION_USA` (Latin + basic) is loaded by default. CJK support requires manually adding `.bcfnt` files (e.g., `CFG_REGION_JPN`, `CFG_REGION_CHN`) to `romfs/` and updating `ui.c` to load them. Falls back to `romfs:/popjoy.bcfnt` if system fonts are unavailable.
 
 **Text cache** (§5.3.1) — see below.
 
@@ -446,7 +451,9 @@ space.
 - Thread calls `ndspSetCallback(NULL, NULL)` to suppress future callbacks
 
 ### 8.4 Bounds Checking
-- All loops filling `names[]` must check `i < MAX_ITEMS`
+- All loops filling `names[]` must check `i < MAX_ITEMS` (1000)
+- **Note**: `xml_attr()` does not enforce buffer sizes. Truncation may occur if attribute values exceed `MAX_ID_LEN` or `MAX_NAME_LEN`.
+- **Bounds checking**: All loops filling `names[]` must check `i < MAX_ITEMS` (1000)
 - Out-of-bounds writes corrupt memory and cause data aborts
 
 ### 8.5 URL Buffer Sizes
@@ -616,9 +623,8 @@ crashes. Register analysis:
 
 ### Modifying the UI
 1. **Keep bounds checks** on all list-filling loops
-2. **Don't call `C2D_TextBufClear()` every frame** — the cache needs stable
-   references into the buffer
-3. **Remember `s_tbuf` is 64KB** — don't shrink it
+2. **Don't call `C2D_TextBufClear()` every frame** — the cache needs stable references into the buffer
+3. **Remember `s_tbuf` is 64KB** — don't shrink it or clear it during rendering
 
 ### Adding a new font
 1. Place `.bcfnt` file in `romfs/`
@@ -647,7 +653,7 @@ crashes. Register analysis:
 | Constant | Value | Where |
 |---|---|---|
 | `SOC_BUFSIZE` | `0x100000` (1MB) | main.c |
-| `MAX_ITEMS` | 200 | api.h |
+| `MAX_ITEMS` | 1000 | api.h |
 | `MAX_NAME_LEN` | 64 | api.h |
 | `MAX_ID_LEN` | 32 | api.h |
 | `API_VERSION` | `"1.16.1"` | api.c |
@@ -667,6 +673,9 @@ crashes. Register analysis:
 | `MAX_FONTS` | 8 | ui.c |
 | `MAX_CACHED_TEXT` | 256 | ui.c |
 | `s_tbuf size` | 65536 | ui.c (C2D_TextBufNew) |
+| `MAX_FONTS` | 8 | ui.c | Maximum number of fonts loaded |
+| `MAX_CACHED_TEXT` | 256 | ui.c | Maximum number of cached text objects |
+| `MAX_STR` | 256 | config.h | Maximum string length for config values |
 | URL buffer size | 2048 | api.c (all URL buffers) |
 | `CONFIG_PATH` | `sdmc:/3ds/navidrome/config.ini` | config.h |
 | `MAX_STR` | 256 | config.h |
