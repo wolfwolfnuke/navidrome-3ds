@@ -72,4 +72,4 @@ void api_stream_url(const char *track_id, char *buf, size_t len);
 struct C2D_Image_s;
 
 // Fetch album cover image; returns 0 on success
-int api_get_album_cover(const char *album_id, struct C2D_Image_s *out);
+int api_get_album_cover(const char *album_id, void *out);
