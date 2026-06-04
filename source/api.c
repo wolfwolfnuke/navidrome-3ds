@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <curl/curl.h>
+#include <citro2d.h>
 
 // ---------------------------------------------------------------------------
 // Internal state
