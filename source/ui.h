@@ -9,7 +9,7 @@ typedef enum {
     SCREEN_PLAYER,
 } Screen;
 
-typedef struct {
+typedef struct UiState {
     Screen screen;
 
     NaviArtistList artists;
@@ -21,13 +21,16 @@ typedef struct {
     int   selected_track;
     int   scroll_offset;
 
-    bool  loading;
+    bool      loading;
+    bool      album_cover_loading;  // Track async cover loading
     C2D_Image album_cover;
-    char  status_msg[128];
+    Tex3DS_SubTexture album_cover_subtex; // Store subtex metadata here
+    char      album_cover_id[MAX_ID_LEN]; // which album's cover is loaded
+    char      status_msg[128];
 } UiState;
 
-void ui_init(void);
-void ui_cleanup(void);
+void ui_init(UiState *state);
+void ui_cleanup(UiState *state);
 
 // Draw both screens. Call once per frame inside the citro2d begin/end block.
 void ui_draw(const UiState *state, C3D_RenderTarget *top, C3D_RenderTarget *bottom);

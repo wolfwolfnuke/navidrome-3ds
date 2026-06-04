@@ -92,7 +92,7 @@ int main(void) {
     debug_log("UiState allocation OK: %p", state);
     state->screen = SCREEN_ARTISTS;
     debug_log("Initializing UI...");
-    ui_init();
+    ui_init(state);
 
     debug_log("Loading config...");
     NaviConfig cfg;
@@ -236,6 +236,16 @@ int main(void) {
                         debug_log("Tracks loaded for album: %s", id);
                         state->status_msg[0] = '\0';
                     }
+                    // Load album cover for this album
+                    state->album_cover.tex = NULL; // reset previous cover
+                    if (api_get_album_cover(id, state) != 0) {
+                        debug_log("[UI] Failed to load album cover for album: %s", id);
+                        state->album_cover.tex = NULL;
+                    } else {
+                        debug_log("[UI] Album cover loaded for album: %s", id);
+                    }
+                    strncpy(state->album_cover_id, id, sizeof(state->album_cover_id) - 1);
+                    state->album_cover_id[sizeof(state->album_cover_id) - 1] = '\0';
                     state->loading = false;
                     break;
                 }
@@ -293,7 +303,7 @@ int main(void) {
     debug_log("Cleaning up API...");
     api_cleanup();
     debug_log("Cleaning up UI...");
-    ui_cleanup();
+    ui_cleanup(state);
     debug_log("Freeing UI state...");
     free(state);
     debug_log("Cleaning up debug log...");

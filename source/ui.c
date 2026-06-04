@@ -274,18 +274,26 @@ static void draw_now_playing(const UiState *state) {
     draw_rect(0, 0, TOP_W, TOP_H, COL_BG);
     draw_text(8, 20, 0.65f, COL_ACCENT, "Navidrome 3DS");
 
-    if (state->screen == SCREEN_PLAYER || audio_is_playing()) {
+    if (audio_is_playing()) {
         // Show current track info from UiState
         if (state->tracks.count > 0 && state->selected_track < state->tracks.count) {
             const NaviTrack *t = &state->tracks.items[state->selected_track];
             
             // Draw album cover if available
             if (state->album_cover.tex) {
-                float coverX = TOP_W - 100 - 8; // 100px wide, 8px margin
-                float coverY = 40;
-                float coverW = 100;
-                float coverH = 100;
-                C2D_DrawImageAt(state->album_cover, coverX, coverY, 0.5f, NULL, 1.0f, 1.0f);
+                float coverX = TOP_W - 155 - 8; // 155px wide (5px smaller), 8px margin
+                float coverY = 60;             // 5px lower (55 + 5)
+                // Scale to 155x155 pixels (subtex width/height are the texture dimensions)
+                float scaleX = 155.0f / state->album_cover.subtex->width;   // Positive for no horizontal flip
+                float scaleY = -155.0f / state->album_cover.subtex->height;  // Negative for vertical flip (left-to-right mirror with rotation)
+                // Rotate 90 degrees counter-clockwise to fix orientation
+                C2D_DrawImageAtRotated(state->album_cover, coverX + 77.5f, coverY + 77.5f, 0.5f, 1.5708f, NULL, scaleX, scaleY);
+            } else if (state->album_cover_loading) {
+                // Show loading placeholder
+                float coverX = TOP_W - 155 - 8;
+                float coverY = 60;             // 5px lower (55 + 5)
+                draw_rect(coverX, coverY, 155, 155, C2D_Color32(0x33, 0x33, 0x33, 0xFF));
+                draw_text(coverX + 10, coverY + 70, 0.4f, COL_TEXT, "Loading cover...");
             }
 
             // Draw text info to the left of the album cover
@@ -294,17 +302,13 @@ static void draw_now_playing(const UiState *state) {
             draw_text(8, 98,  0.42f, COL_DIM,  t->album);
         }
 
-        if (audio_is_playing()) {
-            const char *playstate = audio_is_paused() ? "|| PAUSED" : "> PLAYING";
-            draw_text(8, 128, 0.5f, COL_ACCENT, playstate);
+        const char *playstate = audio_is_paused() ? "|| PAUSED" : "> PLAYING";
+        draw_text(8, 128, 0.5f, COL_ACCENT, playstate);
 
-            float vol = audio_get_volume();
-            draw_text(8,   158, 0.42f, COL_DIM, "Volume");
-            draw_rect(8,   168, 180, 7, COL_DIM);
-            draw_rect(8,   168, 180.0f * vol, 7, COL_ACCENT);
-        } else {
-            draw_text(8, 128, 0.45f, COL_DIM, "Downloading...");
-        }
+        float vol = audio_get_volume();
+        draw_text(8,   158, 0.42f, COL_DIM, "Volume");
+        draw_rect(8,   168, 180, 7, COL_DIM);
+        draw_rect(8,   168, 180.0f * vol, 7, COL_ACCENT);
     } else {
         draw_text(8, 90,  0.5f,  COL_DIM, "No track playing.");
         draw_text(8, 115, 0.45f, COL_DIM, "Browse on the bottom screen.");
@@ -550,7 +554,7 @@ bool ui_handle_input(UiState *state) {
     return false;
 }
 
-void ui_init(void) {
+void ui_init(UiState *state) {
     debug_log("[ENTER] ui_init()");
     // Larger buffer needed because we no longer clear it every frame -
     // the cache holds parsed text objects that reference into this buffer.
@@ -558,15 +562,21 @@ void ui_init(void) {
     fonts_init();
     // Initialize album cover image
     memset(&state->album_cover, 0, sizeof(C2D_Image));
+    state->album_cover_loading = false;
+    state->album_cover_id[0] = '\0';
 }
 
-void ui_cleanup(void) {
+void ui_cleanup(UiState *state) {
     debug_log("[ENTER] ui_cleanup()");
     cache_clear();
     fonts_cleanup();
     // Clean up album cover image
     if (state->album_cover.tex) {
-        C2D_SpriteSheetFreeImage(state->album_cover.tex);
+        C3D_TexDelete(state->album_cover.tex);
+        free(state->album_cover.tex);
+        state->album_cover.tex = NULL;
     }
+    state->album_cover_loading = false;
+    state->album_cover_id[0] = '\0';
     C2D_TextBufDelete(s_tbuf);
 }
