@@ -98,13 +98,8 @@ static void cache_clear(void) {
 static int      s_font_count = 0;
 
 // System font region codes (3DS has separate fonts per region/script)
-static const CFG_Region s_font_regions[] = {
-    CFG_REGION_USA,   // Latin + basic
-    CFG_REGION_JPN,   // Japanese (hiragana, katakana, kanji)
-    CFG_REGION_CHN,   // Simplified Chinese
-    CFG_REGION_TWN,   // Traditional Chinese
-    CFG_REGION_KOR,   // Korean
-};
+// CJK support requires manually adding .bcfnt files to romfs/ and updating fonts_init()
+
 
 static void fonts_init(void) {
     debug_log("[UI] fonts_init called");
@@ -298,6 +293,7 @@ static void draw_now_playing(const UiState *state) {
                 debug_log("[UI] Drawing album cover");
                 float coverX = TOP_W - 100 - 8; // 100px wide, 8px margin
                 float coverY = 40;
+                // Album cover dimensions (fixed for now)
                 float coverW = 100;
                 float coverH = 100;
                 C2D_DrawImageAt(state->album_cover, coverX, coverY, 0.5f, NULL, 1.0f, 1.0f);
@@ -623,7 +619,7 @@ bool ui_handle_input(UiState *state) {
     return false;
 }
 
-void ui_init(void) {
+void ui_init(UiState *state) {
     debug_log("[UI] ui_init called");
     // Larger buffer needed because we no longer clear it every frame -
     // the cache holds parsed text objects that reference into this buffer.
@@ -636,18 +632,20 @@ void ui_init(void) {
     // Initialize album cover image
     debug_log("[UI] Initializing album cover image");
     memset(&state->album_cover, 0, sizeof(C2D_Image));
+    state->album_cover_sheet = NULL;
     debug_log("[UI] ui_init complete");
 }
 
-void ui_cleanup(void) {
+void ui_cleanup(UiState *state) {
     debug_log("[UI] ui_cleanup called");
     debug_log("[UI] Clearing text cache");
     cache_clear();
     fonts_cleanup();
     // Clean up album cover image
-    if (state->album_cover.tex) {
+    if (state->album_cover_sheet) {
         debug_log("[UI] Freeing album cover image");
-        C2D_SpriteSheetFreeImage(state->album_cover.tex);
+        C2D_SpriteSheetFree(state->album_cover_sheet);
+        state->album_cover_sheet = NULL;
         state->album_cover.tex = NULL;
     }
     debug_log("[UI] Deleting text buffer");

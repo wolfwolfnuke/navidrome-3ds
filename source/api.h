@@ -71,5 +71,5 @@ void api_stream_url(const char *track_id, char *buf, size_t len);
 // Forward declaration for C2D_Image
 struct C2D_Image_s;
 
-// Fetch album cover image; returns 0 on success
-int api_get_album_cover(const char *album_id, void *out);
+// Fetch album cover image; returns a SpriteSheet on success, NULL otherwise
+C2D_SpriteSheet api_get_album_cover(const char *album_id);

@@ -23,6 +23,7 @@ typedef struct UiState {
 
     bool      loading;
     bool      album_cover_loading;  // Track async cover loading
+    C2D_SpriteSheet album_cover_sheet; // Store sheet to free later
     C2D_Image album_cover;
     Tex3DS_SubTexture album_cover_subtex; // Store subtex metadata here
     char      album_cover_id[MAX_ID_LEN]; // which album's cover is loaded

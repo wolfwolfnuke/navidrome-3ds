@@ -180,8 +180,7 @@ static const char *xml_next_tag(const char *xml, const char *tag) {
 }
 
 // Function to fetch album cover image
-int api_get_album_cover(const char *album_id, void *out_void) {
-    C2D_Image *out = (C2D_Image *)out_void;
+C2D_SpriteSheet api_get_album_cover(const char *album_id) {
     char url[2048];
     snprintf(url, sizeof(url), "%s/rest/getCoverArt?u=%s&p=%s&v=1.16.1&c=Navidrome3DS&id=%s",
             g_base_url, g_cfg.username, g_cfg.password, album_id);
@@ -193,7 +192,7 @@ int api_get_album_cover(const char *album_id, void *out_void) {
     if (http_code != 200 || !buf.data || buf.len == 0) {
         debug_log("[API] Failed to fetch album cover, HTTP code: %d", http_code);
         buf_free(&buf);
-        return -1;
+        return NULL;
     }
 
     // Detect image format from the first few bytes
@@ -207,22 +206,17 @@ int api_get_album_cover(const char *album_id, void *out_void) {
     }
     debug_log("[API] Album cover format: %s, size: %zu bytes", format, buf.len);
 
-    // Load the image data into a C2D_Image
-    // Note: C2D_Image is a simple struct with a tex field (C3D_Tex *)
-    // For simplicity, we'll use C2D_SpriteSheetLoadFromMem to load the image
-    // and assign the texture to out->tex.
+    // Load the image data into a SpriteSheet
     C2D_SpriteSheet sheet = C2D_SpriteSheetLoadFromMem(buf.data, buf.len);
     if (!sheet) {
         debug_log("[API] Failed to load album cover image. Image format (%s) may not be supported.", format);
         buf_free(&buf);
-        return -1;
+        return NULL;
     }
-    out->tex = C2D_SpriteSheetGetImage(sheet, 0).tex;
-    C2D_SpriteSheetFree(sheet);
 
     debug_log("[API] Successfully loaded album cover image (format: %s)", format);
     buf_free(&buf);
-    return 0;
+    return sheet;
 }
 
 // ---------------------------------------------------------------------------
