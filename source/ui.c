@@ -109,33 +109,38 @@ static const CFG_Region s_font_regions[] = {
 static void fonts_init(void) {
     debug_log("[UI] fonts_init called");
     // Try to load the standard system font first
+    debug_log("[UI] Attempting to load system font (CFG_REGION_USA)");
     s_fonts[s_font_count] = C2D_FontLoadSystem(CFG_REGION_USA);
     if (s_fonts[s_font_count]) {
         s_font_count++;
-        debug_log("[UI] Loaded system font");
+        debug_log("[UI] Successfully loaded system font (CFG_REGION_USA)");
     } else {
         debug_log("[UI] ERROR: Failed to load standard system font (CFG_REGION_USA), trying fallback .bcfnt from romfs");
         // Fallback: load bundled font from romfs
+        debug_log("[UI] Attempting to load fallback font from romfs/popjoy.bcfnt");
         C2D_Font fallback = C2D_FontLoad("romfs:/popjoy.bcfnt");
         if (fallback) {
             s_fonts[s_font_count++] = fallback;
-            debug_log("[UI] Loaded fallback font from romfs/popjoy.bcfnt");
+            debug_log("[UI] Successfully loaded fallback font from romfs/popjoy.bcfnt");
         } else {
             debug_log("[UI] FATAL: No fonts available at all!");
         }
     }
     // Optionally try to load CJK fonts if you have them bundled as .bcfnt files
-    debug_log("[UI] fonts_init complete, total fonts=%d", s_font_count);
+    debug_log("[UI] fonts_init complete, total fonts loaded: %d", s_font_count);
 }
 
 static void fonts_cleanup(void) {
-    debug_log("[ENTER] fonts_cleanup()");
-    debug_log("[ENTER] fonts_cleanup()");
+    debug_log("[UI] fonts_cleanup called");
     for (int i = 0; i < s_font_count; i++) {
-        if (s_fonts[i]) C2D_FontFree(s_fonts[i]);
+        if (s_fonts[i]) {
+            C2D_FontFree(s_fonts[i]);
+            debug_log("[UI] Freed font %d", i);
+        }
         s_fonts[i] = NULL;
     }
     s_font_count = 0;
+    debug_log("[UI] fonts_cleanup complete, all fonts freed");
 }
 
 // ---------------------------------------------------------------------------
@@ -231,7 +236,9 @@ static void draw_rect(float x, float y, float w, float h, u32 color) {
 static void draw_list(const char **names, int count,
                        int selected, int scroll, const char *title,
                        int draw_header) {
+    debug_log("[UI] draw_list called: title=%s, count=%d, selected=%d, scroll=%d", title, count, selected, scroll);
     if (count == 0) {
+        debug_log("[UI] No items to display");
         draw_rect(0, 0, BOT_W, BOT_H, COL_BG);
         draw_text(8, BOT_H/2 - 8, 0.5f, COL_DIM, "No results found.");
         return;
@@ -239,6 +246,7 @@ static void draw_list(const char **names, int count,
 
     if (draw_header) {
         // Header bar
+        debug_log("[UI] Drawing header bar: %s", title);
         draw_rect(0, 0, BOT_W, 30, COL_HEADER_BG);
         draw_text(8, 20, 0.55f, COL_ACCENT, title);
     }
@@ -249,8 +257,10 @@ static void draw_list(const char **names, int count,
         if (idx >= count) break;
 
         float y = LIST_Y + i * ROW_H;
-        if (idx == selected)
+        if (idx == selected) {
+            debug_log("[UI] Drawing selected item: %s", names[idx]);
             draw_rect(0, y - 2, BOT_W, ROW_H, COL_SELECTED);
+        }
 
         char label[160];
         snprintf(label, sizeof(label), "%s", names[idx]);
@@ -260,56 +270,65 @@ static void draw_list(const char **names, int count,
 
     // Scrollbar
     if (count > VISIBLE_ROWS) {
+        debug_log("[UI] Drawing scrollbar");
         float bar_h = (float)VISIBLE_ROWS / count * (BOT_H - LIST_Y);
         float bar_y = LIST_Y + (float)scroll / count * (BOT_H - LIST_Y);
         draw_rect(BOT_W - 4, LIST_Y, 4, BOT_H - LIST_Y, COL_DIM);
         draw_rect(BOT_W - 4, bar_y,  4, bar_h,           COL_ACCENT);
     }
+    debug_log("[UI] draw_list complete");
 }
 
 // ---------------------------------------------------------------------------
 // Top-screen "Now Playing" panel
 // ---------------------------------------------------------------------------
 static void draw_now_playing(const UiState *state) {
+    debug_log("[UI] draw_now_playing called");
     draw_rect(0, 0, TOP_W, TOP_H, COL_BG);
     draw_text(8, 20, 0.65f, COL_ACCENT, "Navidrome 3DS");
 
-    if (audio_is_playing()) {
+    if (state->screen == SCREEN_PLAYER || audio_is_playing()) {
         // Show current track info from UiState
         if (state->tracks.count > 0 && state->selected_track < state->tracks.count) {
             const NaviTrack *t = &state->tracks.items[state->selected_track];
+            debug_log("[UI] Drawing track info: %s - %s", t->title, t->artist);
             
             // Draw album cover if available
             if (state->album_cover.tex) {
-                float coverX = TOP_W - 155 - 8; // 155px wide (5px smaller), 8px margin
-                float coverY = 60;             // 5px lower (55 + 5)
-                // Scale to 155x155 pixels (subtex width/height are the texture dimensions)
-                float scaleX = 155.0f / state->album_cover.subtex->width;   // Positive for no horizontal flip
-                float scaleY = -155.0f / state->album_cover.subtex->height;  // Negative for vertical flip (left-to-right mirror with rotation)
-                // Rotate 90 degrees counter-clockwise to fix orientation
-                C2D_DrawImageAtRotated(state->album_cover, coverX + 77.5f, coverY + 77.5f, 0.5f, 1.5708f, NULL, scaleX, scaleY);
-            } else if (state->album_cover_loading) {
-                // Show loading placeholder
-                float coverX = TOP_W - 155 - 8;
-                float coverY = 60;             // 5px lower (55 + 5)
-                draw_rect(coverX, coverY, 155, 155, C2D_Color32(0x33, 0x33, 0x33, 0xFF));
-                draw_text(coverX + 10, coverY + 70, 0.4f, COL_TEXT, "Loading cover...");
+                debug_log("[UI] Drawing album cover");
+                float coverX = TOP_W - 100 - 8; // 100px wide, 8px margin
+                float coverY = 40;
+                float coverW = 100;
+                float coverH = 100;
+                C2D_DrawImageAt(state->album_cover, coverX, coverY, 0.5f, NULL, 1.0f, 1.0f);
+            } else {
+                debug_log("[UI] No album cover available");
             }
 
             // Draw text info to the left of the album cover
             draw_text(8, 55,  0.5f,  COL_TEXT, t->title);
             draw_text(8, 78,  0.45f, COL_DIM,  t->artist);
             draw_text(8, 98,  0.42f, COL_DIM,  t->album);
+        } else {
+            debug_log("[UI] No track selected or track list empty");
         }
 
-        const char *playstate = audio_is_paused() ? "|| PAUSED" : "> PLAYING";
-        draw_text(8, 128, 0.5f, COL_ACCENT, playstate);
+        if (audio_is_playing()) {
+            const char *playstate = audio_is_paused() ? "|| PAUSED" : "> PLAYING";
+            debug_log("[UI] Playback state: %s", playstate);
+            draw_text(8, 128, 0.5f, COL_ACCENT, playstate);
 
-        float vol = audio_get_volume();
-        draw_text(8,   158, 0.42f, COL_DIM, "Volume");
-        draw_rect(8,   168, 180, 7, COL_DIM);
-        draw_rect(8,   168, 180.0f * vol, 7, COL_ACCENT);
+            float vol = audio_get_volume();
+            debug_log("[UI] Current volume: %.2f", vol);
+            draw_text(8,   158, 0.42f, COL_DIM, "Volume");
+            draw_rect(8,   168, 180, 7, COL_DIM);
+            draw_rect(8,   168, 180.0f * vol, 7, COL_ACCENT);
+        } else {
+            debug_log("[UI] Track is downloading");
+            draw_text(8, 128, 0.45f, COL_DIM, "Downloading...");
+        }
     } else {
+        debug_log("[UI] No track playing");
         draw_text(8, 90,  0.5f,  COL_DIM, "No track playing.");
         draw_text(8, 115, 0.45f, COL_DIM, "Browse on the bottom screen.");
     }
@@ -318,6 +337,7 @@ static void draw_now_playing(const UiState *state) {
     draw_rect(0, TOP_H - 24, TOP_W, 24, COL_HEADER_BG);
     draw_text(4, TOP_H - 6, 0.38f, COL_DIM,
         "START:Pause  L/R:Vol  B:Back  A:Select");
+    debug_log("[UI] draw_now_playing complete");
 }
 
 // ---------------------------------------------------------------------------
@@ -438,17 +458,21 @@ void ui_draw(const UiState *state, C3D_RenderTarget *top, C3D_RenderTarget *bott
 
 
 bool ui_handle_input(UiState *state) {
+    debug_log("[UI] ui_handle_input called");
     hidScanInput();
     u32 down  = hidKeysDown();
     u32 held  = hidKeysHeld();
     static u32 repeat_timer = 0;
     static u32 last_held = 0;
 
+    // Log input state
+    debug_log("[UI] Input state: down=0x%X, held=0x%X", down, held);
 
     // Key repeat logic (simple, per frame)
     if (held & (KEY_DUP | KEY_DDOWN)) {
         if (last_held != held) {
             repeat_timer = 0; // reset on new press
+            debug_log("[UI] Key repeat timer reset");
         } else {
             repeat_timer++;
         }
@@ -457,6 +481,7 @@ bool ui_handle_input(UiState *state) {
         if (repeat_timer > 90) interval = 2;
         if (repeat_timer == 15 || (repeat_timer > 15 && (repeat_timer % interval == 0))) {
             down |= held & (KEY_DUP | KEY_DDOWN);
+            debug_log("[UI] Key repeat triggered: down=0x%X", down);
         }
     } else {
         repeat_timer = 0;
@@ -467,19 +492,47 @@ bool ui_handle_input(UiState *state) {
     int  max = 0;
 
     switch (state->screen) {
-        case SCREEN_ARTISTS: sel = &state->selected_artist; max = state->artists.count; break;
-        case SCREEN_ALBUMS:  sel = &state->selected_album;  max = state->albums.count;  break;
-        case SCREEN_TRACKS:  sel = &state->selected_track;  max = state->tracks.count;  break;
-        default: break;
+        case SCREEN_ARTISTS:
+            sel = &state->selected_artist; 
+            max = state->artists.count; 
+            debug_log("[UI] Current screen: ARTISTS, selected=%d, count=%d", *sel, max);
+            break;
+        case SCREEN_ALBUMS:
+            sel = &state->selected_album; 
+            max = state->albums.count; 
+            debug_log("[UI] Current screen: ALBUMS, selected=%d, count=%d", *sel, max);
+            break;
+        case SCREEN_TRACKS:
+            sel = &state->selected_track; 
+            max = state->tracks.count; 
+            debug_log("[UI] Current screen: TRACKS, selected=%d, count=%d", *sel, max);
+            break;
+        default:
+            debug_log("[UI] Current screen: PLAYER or unknown");
+            break;
     }
 
     // Volume control (works on all screens)
-    if (down & KEY_L) audio_set_volume(audio_get_volume() - 0.1f);
-    if (down & KEY_R) audio_set_volume(audio_get_volume() + 0.1f);
+    if (down & KEY_L) {
+        float vol = audio_get_volume() - 0.1f;
+        audio_set_volume(vol);
+        debug_log("[UI] Volume decreased: %.2f", vol);
+    }
+    if (down & KEY_R) {
+        float vol = audio_get_volume() + 0.1f;
+        audio_set_volume(vol);
+        debug_log("[UI] Volume increased: %.2f", vol);
+    }
 
     // Pause / resume
-    if (down & KEY_START)  audio_toggle_pause();
-    if (down & KEY_SELECT) audio_stop();
+    if (down & KEY_START) {
+        audio_toggle_pause();
+        debug_log("[UI] Playback toggled (pause/resume)");
+    }
+    if (down & KEY_SELECT) {
+        audio_stop();
+        debug_log("[UI] Playback stopped");
+    }
 
     if (sel && max > 0) {
         int step = 1;
@@ -492,91 +545,112 @@ bool ui_handle_input(UiState *state) {
             if (*sel > 0) {
                 *sel -= step;
                 if (*sel < 0) *sel = 0;
+                debug_log("[UI] Selected item moved up: %d", *sel);
             }
-            if (*sel < state->scroll_offset)
+            if (*sel < state->scroll_offset) {
                 state->scroll_offset = *sel;
+                debug_log("[UI] Scroll offset updated: %d", state->scroll_offset);
+            }
         }
         if (down & KEY_DDOWN) {
             if (*sel < max - 1) {
                 *sel += step;
                 if (*sel > max - 1) *sel = max - 1;
+                debug_log("[UI] Selected item moved down: %d", *sel);
             }
-            if (*sel >= state->scroll_offset + VISIBLE_ROWS)
+            if (*sel >= state->scroll_offset + VISIBLE_ROWS) {
                 state->scroll_offset = *sel - VISIBLE_ROWS + 1;
+                debug_log("[UI] Scroll offset updated: %d", state->scroll_offset);
+            }
         }
     }
 
     if (down & KEY_A) {
+        debug_log("[UI] A button pressed");
         switch (state->screen) {
             case SCREEN_ARTISTS:
                 state->screen       = SCREEN_ALBUMS;
                 state->selected_album = 0;
                 state->scroll_offset  = 0;
+                debug_log("[UI] Transitioning to ALBUMS screen");
                 return true; // signal: load albums
             case SCREEN_ALBUMS:
                 state->screen        = SCREEN_TRACKS;
                 state->selected_track = 0;
                 state->scroll_offset  = 0;
+                debug_log("[UI] Transitioning to TRACKS screen");
                 return true; // signal: load tracks
             case SCREEN_TRACKS:
                 state->screen = SCREEN_PLAYER;
+                debug_log("[UI] Transitioning to PLAYER screen");
                 return true; // signal: play track
             default:
+                debug_log("[UI] A button pressed on unknown screen");
                 break;
         }
     }
 
-
     if (down & KEY_B) {
+        debug_log("[UI] B button pressed");
         switch (state->screen) {
             case SCREEN_ALBUMS:
                 state->screen        = SCREEN_ARTISTS;
                 state->scroll_offset = state->selected_artist;
                 if (state->scroll_offset > 0) state->scroll_offset--;
+                debug_log("[UI] Transitioning to ARTISTS screen");
                 break;
             case SCREEN_TRACKS:
                 state->screen        = SCREEN_ALBUMS;
                 state->scroll_offset = state->selected_album;
                 if (state->scroll_offset > 0) state->scroll_offset--;
+                debug_log("[UI] Transitioning to ALBUMS screen");
                 break;
             case SCREEN_PLAYER:
                 state->screen        = SCREEN_TRACKS;
                 state->scroll_offset = state->selected_track;
                 if (state->scroll_offset > 0) state->scroll_offset--;
+                debug_log("[UI] Transitioning to TRACKS screen");
                 // Signal stop but don't block - main loop calls audio_stop()
                 // after ui_handle_input returns true
                 return true;  // main.c handles the actual stop
             default:
+                debug_log("[UI] B button pressed on unknown screen");
                 break;
         }
     }
 
+    debug_log("[UI] ui_handle_input complete, no state change");
     return false;
 }
 
-void ui_init(UiState *state) {
-    debug_log("[ENTER] ui_init()");
+void ui_init(void) {
+    debug_log("[UI] ui_init called");
     // Larger buffer needed because we no longer clear it every frame -
     // the cache holds parsed text objects that reference into this buffer.
+    debug_log("[UI] Creating text buffer with size 65536");
     s_tbuf = C2D_TextBufNew(65536);
+    if (!s_tbuf) {
+        debug_log("[UI] ERROR: Failed to create text buffer");
+    }
     fonts_init();
     // Initialize album cover image
+    debug_log("[UI] Initializing album cover image");
     memset(&state->album_cover, 0, sizeof(C2D_Image));
-    state->album_cover_loading = false;
-    state->album_cover_id[0] = '\0';
+    debug_log("[UI] ui_init complete");
 }
 
-void ui_cleanup(UiState *state) {
-    debug_log("[ENTER] ui_cleanup()");
+void ui_cleanup(void) {
+    debug_log("[UI] ui_cleanup called");
+    debug_log("[UI] Clearing text cache");
     cache_clear();
     fonts_cleanup();
     // Clean up album cover image
     if (state->album_cover.tex) {
-        C3D_TexDelete(state->album_cover.tex);
-        free(state->album_cover.tex);
+        debug_log("[UI] Freeing album cover image");
+        C2D_SpriteSheetFreeImage(state->album_cover.tex);
         state->album_cover.tex = NULL;
     }
-    state->album_cover_loading = false;
-    state->album_cover_id[0] = '\0';
+    debug_log("[UI] Deleting text buffer");
     C2D_TextBufDelete(s_tbuf);
+    debug_log("[UI] ui_cleanup complete");
 }

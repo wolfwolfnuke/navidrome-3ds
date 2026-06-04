@@ -1,14 +1,9 @@
 #include "api.h"
 #include "debug.h"
-#include "ui.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <curl/curl.h>
-#include <citro2d.h>
-#include <citro3d.h>
-#include <tex3ds.h>
-#include <3ds.h>
 
 // ---------------------------------------------------------------------------
 // Internal state
@@ -49,12 +44,20 @@ static Buffer buf_new(void) {
     b.cap  = 4096;
     b.len  = 0;
     b.data = malloc(b.cap);
-    if (b.data) b.data[0] = '\0';
+    if (b.data) {
+        b.data[0] = '\0';
+        debug_log("[API] Buffer allocated: capacity=%zu", b.cap);
+    } else {
+        debug_log("[API] Buffer allocation failed");
+    }
     return b;
 }
 
 static void buf_free(Buffer *b) {
-    if (b->data) free(b->data);
+    if (b->data) {
+        free(b->data);
+        debug_log("[API] Buffer freed: capacity=%zu, length=%zu", b->cap, b->len);
+    }
     b->data = NULL;
     b->len  = 0;
     b->cap  = 0;
@@ -106,6 +109,7 @@ static void build_url(char *out, size_t len, const char *endpoint,
         g_cfg.username,
         g_cfg.password,
         extra_params ? extra_params : "");
+    debug_log("[API] Built URL for endpoint '%s': %s", endpoint, out);
 }
 
 // ---------------------------------------------------------------------------
@@ -174,255 +178,46 @@ static const char *xml_next_tag(const char *xml, const char *tag) {
     return strstr(xml, tag);
 }
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
-// Background thread data for album cover loading
-typedef struct {
-    UiState *state;
-    char album_id[MAX_ID_LEN];
-    LightEvent *event;
-} AlbumCoverThreadData;
-
-// Convert linear coordinates to 3DS hardware morton tiled index (Z-Order 8x8 tiling)
-static uint32_t tile_index(int x, int y, int w) {
-    // 3DS textures are made of 8x8 blocks.
-    // Inside each 8x8 block, pixels are ordered in Z-curve.
-    // Elements are grouped into 2x2, then 4x4, then 8x8.
-    int block_x = x / 8;
-    int block_y = y / 8;
-    int blocks_per_row = w / 8;
-    int block_idx = (block_y * blocks_per_row + block_x) * 64;
-
-    int cx = x % 8;
-    int cy = y % 8;
-
-    // Morton Z-order calculation for 8x8 tile
-    int offset = 0;
-    offset += (cx & 1) << 0;
-    offset += (cy & 1) << 1;
-    offset += (cx & 2) << 1;
-    offset += (cy & 2) << 2;
-    offset += (cx & 4) << 2;
-    offset += (cy & 4) << 3;
-
-    return block_idx + offset;
-}
-
-// Background thread function for loading album covers
-static void album_cover_thread_func(void *arg) {
-    AlbumCoverThreadData *data = (AlbumCoverThreadData *)arg;
-    UiState *state = data->state;
-    const char *album_id = data->album_id;
-    LightEvent *event = data->event;
-
-    debug_log("[API] Background thread started for album: %s", album_id);
-
+// Function to fetch album cover image
+int api_get_album_cover(const char *album_id, C2D_Image *out) {
     char url[2048];
     snprintf(url, sizeof(url), "%s/rest/getCoverArt?u=%s&p=%s&v=1.16.1&c=Navidrome3DS&id=%s",
             g_base_url, g_cfg.username, g_cfg.password, album_id);
 
+    debug_log("[API] Fetching album cover: %s", url);
+
     Buffer buf = buf_new();
     int http_code = http_get(url, &buf);
-    debug_log("[API] Album cover HTTP response: %d (size: %d bytes)", http_code, buf.len);
-    
     if (http_code != 200 || !buf.data || buf.len == 0) {
         debug_log("[API] Failed to fetch album cover, HTTP code: %d", http_code);
         buf_free(&buf);
-        LightEvent_Signal(event);
-        free(data);
-        return;
+        return -1;
     }
 
-    // Use stb_image to decode the image
-    int width, height, channels;
-    unsigned char *image_data = stbi_load_from_memory((const unsigned char *)buf.data, buf.len, &width, &height, &channels, 4);
-    if (!image_data) {
-        debug_log("[API] stb_image failed to decode image: %s", stbi_failure_reason());
-        buf_free(&buf);
-        LightEvent_Signal(event);
-        free(data);
-        return;
-    }
-    debug_log("[API] Decoded album cover: %dx%d, %d channels", width, height, channels);
-
-    // Resize the image to fit 3DS texture constraints (max 1024x1024, power-of-2)
-    int tex_width = width;
-    int tex_height = height;
-    
-    // Clamp to 1024x1024 max
-    if (tex_width > 1024) tex_width = 1024;
-    if (tex_height > 1024) tex_height = 1024;
-    
-    // Round down to nearest power of 2
-    tex_width = 1 << (31 - __builtin_clz(tex_width));
-    tex_height = 1 << (31 - __builtin_clz(tex_height));
-    
-    // Clamp to 1024x1024 again (in case rounding up exceeded it)
-    if (tex_width > 1024) tex_width = 1024;
-    if (tex_height > 1024) tex_height = 1024;
-    
-    debug_log("[API] Resized album cover to: %dx%d", tex_width, tex_height);
-
-    // Allocate a C3D_Tex
-    C3D_Tex* tex = calloc(1, sizeof(C3D_Tex));
-    if (!tex) {
-        debug_log("[API] Failed to allocate texture memory");
-        stbi_image_free(image_data);
-        buf_free(&buf);
-        LightEvent_Signal(event);
-        free(data);
-        return;
-    }
-
-    // Initialize the texture
-    if (!C3D_TexInit(tex, (u16)tex_width, (u16)tex_height, GPU_RGBA8)) {
-        debug_log("[API] C3D_TexInit failed");
-        free(tex);
-        stbi_image_free(image_data);
-        buf_free(&buf);
-        LightEvent_Signal(event);
-        free(data);
-        return;
-    }
-
-    // If the image is smaller than the texture, clear the texture first
-    memset(tex->data, 0, tex->size);
-
-    // Copy the image data into the texture (resizing if needed with bilinear interpolation)
-    for (int y = 0; y < tex_height; y++) {
-        for (int x = 0; x < tex_width; x++) {
-            // Calculate source coordinates (floating-point for interpolation)
-            float src_x = (x + 0.5f) * (float)width / (float)tex_width - 0.5f;
-            float src_y = (y + 0.5f) * (float)height / (float)tex_height - 0.5f;
-            
-            // Clamp to image bounds
-            if (src_x < 0) src_x = 0;
-            if (src_y < 0) src_y = 0;
-            if (src_x >= width - 1) src_x = width - 1.001f;
-            if (src_y >= height - 1) src_y = height - 1.001f;
-            
-            // Get the 4 nearest pixels for bilinear interpolation
-            int x1 = (int)src_x;
-            int y1 = (int)src_y;
-            int x2 = x1 + 1;
-            int y2 = y1 + 1;
-            
-            // Calculate interpolation weights
-            float x_weight = src_x - x1;
-            float y_weight = src_y - y1;
-            
-            // Sample the 4 pixels (RGBA)
-            u32 p1 = ((u32*)image_data)[y1 * width + x1];
-            u32 p2 = ((u32*)image_data)[y1 * width + x2];
-            u32 p3 = ((u32*)image_data)[y2 * width + x1];
-            u32 p4 = ((u32*)image_data)[y2 * width + x2];
-            
-            // Interpolate R, G, B, A separately
-            float r = (1.0f - y_weight) * ((1.0f - x_weight) * ((p1 >> 0) & 0xFF) + x_weight * ((p2 >> 0) & 0xFF))
-                   + y_weight * ((1.0f - x_weight) * ((p3 >> 0) & 0xFF) + x_weight * ((p4 >> 0) & 0xFF));
-            float g = (1.0f - y_weight) * ((1.0f - x_weight) * ((p1 >> 8) & 0xFF) + x_weight * ((p2 >> 8) & 0xFF))
-                   + y_weight * ((1.0f - x_weight) * ((p3 >> 8) & 0xFF) + x_weight * ((p4 >> 8) & 0xFF));
-            float b = (1.0f - y_weight) * ((1.0f - x_weight) * ((p1 >> 16) & 0xFF) + x_weight * ((p2 >> 16) & 0xFF))
-                   + y_weight * ((1.0f - x_weight) * ((p3 >> 16) & 0xFF) + x_weight * ((p4 >> 16) & 0xFF));
-            float a = (1.0f - y_weight) * ((1.0f - x_weight) * ((p1 >> 24) & 0xFF) + x_weight * ((p2 >> 24) & 0xFF))
-                   + y_weight * ((1.0f - x_weight) * ((p3 >> 24) & 0xFF) + x_weight * ((p4 >> 24) & 0xFF));
-            
-            u32 color = ((u32)a << 24) | ((u32)b << 16) | ((u32)g << 8) | (u32)r;
-            
-            // Write to the texture using 3DS tiled indexing
-            ((u32*)tex->data)[tile_index(x, tex_height - 1 - y, tex_width)] = color;
+    // Detect image format from the first few bytes
+    const char *format = "unknown";
+    if (buf.len >= 8) {
+        if (buf.data[0] == 0xFF && buf.data[1] == 0xD8) {
+            format = "JPEG";
+        } else if (buf.data[0] == 0x89 && buf.data[1] == 0x50 && buf.data[2] == 0x4E && buf.data[3] == 0x47) {
+            format = "PNG";
         }
     }
+    debug_log("[API] Album cover format: %s, size: %zu bytes", format, buf.len);
 
-    // Set up the subtexture metadata (use the full texture, let C2D_DrawImageAt scale it)
-    state->album_cover_subtex.width = tex_width;
-    state->album_cover_subtex.height = tex_height;
-    state->album_cover_subtex.left = 0.0f;
-    state->album_cover_subtex.top = 0.0f;
-    state->album_cover_subtex.right = 1.0f;
-    state->album_cover_subtex.bottom = 1.0f;
+    // Load the image data into a C2D_Image
+    out->tex = C2D_SpriteSheetLoadImageMem(buf.data, buf.len);
+    if (!out->tex) {
+        debug_log("[API] Failed to load album cover image. Image format (%s) may not be supported.", format);
+        buf_free(&buf);
+        return -1;
+    }
 
-    // Set up the C2D_Image
-    state->album_cover.tex = tex;
-    state->album_cover.subtex = &state->album_cover_subtex;
-
-    // Log texture info for debugging
-    debug_log("[API] Texture setup: %dx%d, subtex: %dx%d (%.2f,%.2f)-(%.2f,%.2f)",
-              tex_width, tex_height,
-              state->album_cover_subtex.width, state->album_cover_subtex.height,
-              state->album_cover_subtex.left, state->album_cover_subtex.top,
-              state->album_cover_subtex.right, state->album_cover_subtex.bottom);
-
-    // Clean up
-    stbi_image_free(image_data);
+    // Set default dimensions if not available
+    out->params.width = 100;
+    out->params.height = 100;
+    debug_log("[API] Successfully loaded album cover image (format: %s)", format);
     buf_free(&buf);
-    LightEvent_Signal(event);
-    free(data);
-}
-
-// Function to fetch album cover image
-int api_get_album_cover(const char *album_id, void *out) {
-    UiState *state = (UiState *)out;
-    
-    // If already loading this album, skip
-    if (state->album_cover_loading && strcmp(state->album_cover_id, album_id) == 0) {
-        debug_log("[API] Already loading album cover for: %s", album_id);
-        return 0;
-    }
-    
-    // If already loaded this album, skip
-    if (state->album_cover.tex && strcmp(state->album_cover_id, album_id) == 0) {
-        debug_log("[API] Album cover already loaded for: %s", album_id);
-        return 0;
-    }
-    
-    // Mark as loading
-    state->album_cover_loading = true;
-    strncpy(state->album_cover_id, album_id, sizeof(state->album_cover_id) - 1);
-    state->album_cover_id[sizeof(state->album_cover_id) - 1] = '\0';
-    
-    // Free previous cover if it exists
-    if (state->album_cover.tex) {
-        C3D_TexDelete(state->album_cover.tex);
-        free(state->album_cover.tex);
-        state->album_cover.tex = NULL;
-    }
-    
-    // Set up thread data
-    AlbumCoverThreadData *data = calloc(1, sizeof(AlbumCoverThreadData));
-    if (!data) {
-        state->album_cover_loading = false;
-        return -1;
-    }
-    
-    data->state = state;
-    strncpy(data->album_id, album_id, sizeof(data->album_id) - 1);
-    data->album_id[sizeof(data->album_id) - 1] = '\0';
-    
-    // Set up event for thread synchronization
-    LightEvent *event = calloc(1, sizeof(LightEvent));
-    if (!event) {
-        free(data);
-        state->album_cover_loading = false;
-        return -1;
-    }
-    LightEvent_Init(event, RESET_STICKY);
-    data->event = event;
-    
-    // Create the background thread
-    Thread thread = threadCreate(album_cover_thread_func, data, 32 * 1024, 0x30, -2, false);
-    if (!thread) {
-        debug_log("[API] Failed to create album cover thread");
-        free(event);
-        free(data);
-        state->album_cover_loading = false;
-        return -1;
-    }
-    
-    // Detach the thread (we don't need to join it)
-    threadDetach(thread);
-    
     return 0;
 }
 
@@ -499,17 +294,21 @@ int api_get_artists(NaviArtistList *out) {
 }
 
 int api_get_albums(const char *artist_id, NaviAlbumList *out) {
+    debug_log("[API] api_get_albums called for artist_id=%s", artist_id);
     out->count = 0;
     char extra[128], url[2048];
     snprintf(extra, sizeof(extra), "&id=%s", artist_id);
     build_url(url, sizeof(url), "getArtist", extra);
 
     Buffer buf = buf_new();
-    if (http_get(url, &buf) != 200 || !buf.data) {
+    int http_code = http_get(url, &buf);
+    if (http_code != 200 || !buf.data) {
+        debug_log("[API] api_get_albums failed, HTTP code: %d", http_code);
         buf_free(&buf);
         return -1;
     }
 
+    debug_log("[API] Parsing album data for artist_id=%s", artist_id);
     const char *p = buf.data;
     while (out->count < MAX_ITEMS) {
         p = xml_next_tag(p, "<album ");
@@ -526,26 +325,34 @@ int api_get_albums(const char *artist_id, NaviAlbumList *out) {
         xml_attr(p, "songCount", tmp, sizeof(tmp));
         al->songCount = tmp[0] ? atoi(tmp) : 0;
 
+        debug_log("[API] Parsed album: id=%s, name=%s, artist=%s, year=%d, songCount=%d", 
+                 al->id, al->name, al->artist, al->year, al->songCount);
+
         if (al->id[0]) out->count++;
         p++;
     }
 
+    debug_log("[API] api_get_albums loaded %d albums for artist_id=%s", out->count, artist_id);
     buf_free(&buf);
     return 0;
 }
 
 int api_get_tracks(const char *album_id, NaviTrackList *out) {
+    debug_log("[API] api_get_tracks called for album_id=%s", album_id);
     out->count = 0;
     char extra[128], url[2048];
     snprintf(extra, sizeof(extra), "&id=%s", album_id);
     build_url(url, sizeof(url), "getAlbum", extra);
 
     Buffer buf = buf_new();
-    if (http_get(url, &buf) != 200 || !buf.data) {
+    int http_code = http_get(url, &buf);
+    if (http_code != 200 || !buf.data) {
+        debug_log("[API] api_get_tracks failed, HTTP code: %d", http_code);
         buf_free(&buf);
         return -1;
     }
 
+    debug_log("[API] Parsing track data for album_id=%s", album_id);
     const char *p = buf.data;
     while (out->count < MAX_ITEMS) {
         p = xml_next_tag(p, "<song ");
@@ -563,16 +370,22 @@ int api_get_tracks(const char *album_id, NaviTrackList *out) {
         xml_attr(p, "track",    tmp, sizeof(tmp));
         t->track = tmp[0] ? atoi(tmp) : 0;
 
+        debug_log("[API] Parsed track: id=%s, title=%s, artist=%s, album=%s, duration=%d, track=%d", 
+                 t->id, t->title, t->artist, t->album, t->duration, t->track);
+
         if (t->id[0]) out->count++;
         p++;
     }
 
+    debug_log("[API] api_get_tracks loaded %d tracks for album_id=%s", out->count, album_id);
     buf_free(&buf);
     return 0;
 }
 
 void api_stream_url(const char *track_id, char *buf, size_t len) {
+    debug_log("[API] api_stream_url called for track_id=%s", track_id);
     char extra[128];
     snprintf(extra, sizeof(extra), "&id=%s&format=mp3&maxBitRate=128", track_id);
     build_url(buf, len, "stream", extra);
+    debug_log("[API] Generated stream URL: %s", buf);
 }
