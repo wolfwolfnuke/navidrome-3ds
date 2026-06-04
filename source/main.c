@@ -237,12 +237,19 @@ int main(void) {
                         state->status_msg[0] = '\0';
                     }
                     // Load album cover for this album
+                    if (state->album_cover_sheet) {
+                        C2D_SpriteSheetFree(state->album_cover_sheet);
+                        state->album_cover_sheet = NULL;
+                    }
                     state->album_cover.tex = NULL; // reset previous cover
-                    if (api_get_album_cover(id, state) != 0) {
+                    C2D_SpriteSheet sheet = (C2D_SpriteSheet)api_get_album_cover(id);
+                    if (!sheet) {
                         debug_log("[UI] Failed to load album cover for album: %s", id);
                         state->album_cover.tex = NULL;
                     } else {
                         debug_log("[UI] Album cover loaded for album: %s", id);
+                        state->album_cover_sheet = sheet;
+                        state->album_cover.tex = C2D_SpriteSheetGetImage(sheet, 0).tex;
                     }
                     strncpy(state->album_cover_id, id, sizeof(state->album_cover_id) - 1);
                     state->album_cover_id[sizeof(state->album_cover_id) - 1] = '\0';
