@@ -71,5 +71,9 @@ void api_stream_url(const char *track_id, char *buf, size_t len);
 // Forward declaration for C2D_Image
 struct C2D_Image_s;
 
+// Forward declaration for citro2d types
+struct C2D_SpriteSheet_s;
+typedef struct C2D_SpriteSheet_s *C2D_SpriteSheetPtr;
+
 // Fetch album cover image; returns a SpriteSheet on success, NULL otherwise
-C2D_SpriteSheet api_get_album_cover(const char *album_id);
+void *api_get_album_cover(const char *album_id);

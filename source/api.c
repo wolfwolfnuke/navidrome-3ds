@@ -180,7 +180,7 @@ static const char *xml_next_tag(const char *xml, const char *tag) {
 }
 
 // Function to fetch album cover image
-C2D_SpriteSheet api_get_album_cover(const char *album_id) {
+void *api_get_album_cover(const char *album_id) {
     char url[2048];
     snprintf(url, sizeof(url), "%s/rest/getCoverArt?u=%s&p=%s&v=1.16.1&c=Navidrome3DS&id=%s",
             g_base_url, g_cfg.username, g_cfg.password, album_id);
