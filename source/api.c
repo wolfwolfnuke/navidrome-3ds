@@ -180,7 +180,7 @@ static const char *xml_next_tag(const char *xml, const char *tag) {
 }
 
 // Function to fetch album cover image
-int api_get_album_cover(const char *album_id, C2D_Image *out) {
+int api_get_album_cover(const char *album_id, struct C2D_Image_s *out) {
     char url[2048];
     snprintf(url, sizeof(url), "%s/rest/getCoverArt?u=%s&p=%s&v=1.16.1&c=Navidrome3DS&id=%s",
             g_base_url, g_cfg.username, g_cfg.password, album_id);
