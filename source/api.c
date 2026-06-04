@@ -207,16 +207,18 @@ int api_get_album_cover(const char *album_id, C2D_Image *out) {
     debug_log("[API] Album cover format: %s, size: %zu bytes", format, buf.len);
 
     // Load the image data into a C2D_Image
-    out->tex = C2D_SpriteSheetLoadImageMem(buf.data, buf.len);
-    if (!out->tex) {
+    // Note: C2D_Image is a simple struct with a tex field (C3D_Tex *)
+    // For simplicity, we'll use C2D_SpriteSheetLoadFromMem to load the image
+    // and assign the texture to out->tex.
+    C2D_SpriteSheet sheet = C2D_SpriteSheetLoadFromMem(buf.data, buf.len);
+    if (!sheet) {
         debug_log("[API] Failed to load album cover image. Image format (%s) may not be supported.", format);
         buf_free(&buf);
         return -1;
     }
+    out->tex = C2D_SpriteSheetGetImage(sheet, 0)->tex;
+    C2D_SpriteSheetFree(sheet);
 
-    // Set default dimensions if not available
-    out->params.width = 100;
-    out->params.height = 100;
     debug_log("[API] Successfully loaded album cover image (format: %s)", format);
     buf_free(&buf);
     return 0;

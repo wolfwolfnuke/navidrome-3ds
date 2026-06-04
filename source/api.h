@@ -69,4 +69,4 @@ int api_get_tracks(const char *album_id, NaviTrackList *out);
 void api_stream_url(const char *track_id, char *buf, size_t len);
 
 // Fetch album cover image; returns 0 on success
-int api_get_album_cover(const char *album_id, void *out);
+int api_get_album_cover(const char *album_id, C2D_Image *out);
