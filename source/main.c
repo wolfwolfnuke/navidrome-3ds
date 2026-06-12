@@ -202,9 +202,7 @@ int main(void) {
             aptSetSleepAllowed(true);
         }
 
-        debug_log("Main loop iteration");
         bool action = ui_handle_input(state);
-        debug_log("ui_handle_input returned: %d", action);
 
         if (action) {
             debug_log("Action detected, screen=%d", state->screen);
@@ -287,7 +285,6 @@ int main(void) {
             }
         }
 
-        debug_log("Rendering frame");
         C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
         C2D_TargetClear(top,    C2D_Color32(0x1a, 0x1a, 0x2e, 0xFF));
         C2D_TargetClear(bottom, C2D_Color32(0x1a, 0x1a, 0x2e, 0xFF));

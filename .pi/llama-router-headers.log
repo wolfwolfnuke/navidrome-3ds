@@ -1800,3 +1800,276 @@
   "provider": "openrouter"
 }
 
+{
+  "timestamp": "2026-06-07T20:18:46.425Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-07T20:21:41.106Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-07T20:25:52.315Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-07T20:29:08.526Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:18:12.396Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:21:03.874Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:21:38.874Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:23:19.595Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:23:59.280Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:25:29.916Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:26:15.189Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:31:10.424Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:34:40.888Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:35:20.538Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:35:28.373Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:37:43.864Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:39:20.635Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:40:04.950Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:40:15.048Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:41:41.400Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:44:22.532Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+

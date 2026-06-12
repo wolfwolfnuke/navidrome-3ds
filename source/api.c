@@ -246,10 +246,30 @@ int api_ping(void) {
     debug_log("[API] Ping URL: %s", url);
 
     Buffer buf = buf_new();
+    debug_log("[API] Ping buf.data=%p buf.len=%zu", buf.data, buf.len);
     int code = http_get(url, &buf);
     debug_log("[API] Ping HTTP code: %d", code);
-    int ok = (code == 200 && buf.data && strstr(buf.data, "status=\"ok\""));
-    debug_log("[API] Ping response: %s", buf.data ? buf.data : "(null)");
+    debug_log("[API] Ping buf.data=%p buf.len=%zu", buf.data, buf.len);
+
+    // Hex dump the response body for exact inspection
+    if (buf.data && buf.len > 0) {
+        char hexdump[513] = {0};
+        size_t dump_len = buf.len > 256 ? 256 : buf.len;
+        for (size_t i = 0; i < dump_len; i++) {
+            snprintf(hexdump + strlen(hexdump), sizeof(hexdump) - strlen(hexdump), "%02X ", (unsigned char)buf.data[i]);
+        }
+        debug_log("[API] Ping body hex (%zu bytes): %s", buf.len, hexdump);
+        debug_log("[API] Ping body text: %s", buf.data);
+    } else {
+        debug_log("[API] Ping body: (null or zero length)");
+    }
+
+    const char *needle = "status=\"ok\"";
+    char *found = buf.data ? strstr(buf.data, needle) : NULL;
+    debug_log("[API] Ping strstr(\"status=\\\"ok\\\"\") = %p", (void*)found);
+
+    int ok = (code == 200 && buf.data && buf.len > 0 && found);
+    debug_log("[API] Ping ok=%d code=%d data=%p len=%zu", ok, code, (void*)buf.data, buf.len);
     buf_free(&buf);
     debug_log("[API] api_ping returning %d", ok ? 0 : -1);
     return ok ? 0 : -1;

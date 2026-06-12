@@ -2,7 +2,18 @@ api.o: /home/sam/Documents/GitHub/navidrome-3ds/source/api.c \
  /home/sam/Documents/GitHub/navidrome-3ds/source/api.h \
  /home/sam/Documents/GitHub/navidrome-3ds/source/config.h \
  /home/sam/Documents/GitHub/navidrome-3ds/source/debug.h \
- /home/sam/Documents/GitHub/navidrome-3ds/source/ui.h \
+ /opt/devkitpro/portlibs/3ds/include/curl/curl.h \
+ /opt/devkitpro/portlibs/3ds/include/curl/curlver.h \
+ /opt/devkitpro/portlibs/3ds/include/curl/system.h \
+ /opt/devkitpro/libctru/include/sys/socket.h \
+ /opt/devkitpro/portlibs/3ds/include/curl/easy.h \
+ /opt/devkitpro/portlibs/3ds/include/curl/multi.h \
+ /opt/devkitpro/portlibs/3ds/include/curl/curl.h \
+ /opt/devkitpro/portlibs/3ds/include/curl/urlapi.h \
+ /opt/devkitpro/portlibs/3ds/include/curl/options.h \
+ /opt/devkitpro/portlibs/3ds/include/curl/header.h \
+ /opt/devkitpro/portlibs/3ds/include/curl/websockets.h \
+ /opt/devkitpro/portlibs/3ds/include/curl/typecheck-gcc.h \
  /opt/devkitpro/libctru/include/citro2d.h \
  /opt/devkitpro/libctru/include/citro3d.h \
  /opt/devkitpro/libctru/include/c3d/types.h \
@@ -66,7 +77,6 @@ api.o: /home/sam/Documents/GitHub/navidrome-3ds/source/api.c \
  /opt/devkitpro/libctru/include/3ds/services/pxipm.h \
  /opt/devkitpro/libctru/include/3ds/services/soc.h \
  /opt/devkitpro/libctru/include/netinet/in.h \
- /opt/devkitpro/libctru/include/sys/socket.h \
  /opt/devkitpro/libctru/include/3ds/services/mic.h \
  /opt/devkitpro/libctru/include/3ds/services/mvd.h \
  /opt/devkitpro/libctru/include/3ds/services/nfc.h \
@@ -113,23 +123,22 @@ api.o: /home/sam/Documents/GitHub/navidrome-3ds/source/api.c \
  /opt/devkitpro/libctru/include/c2d/spritesheet.h \
  /opt/devkitpro/libctru/include/c2d/sprite.h \
  /opt/devkitpro/libctru/include/c2d/text.h \
- /opt/devkitpro/libctru/include/c2d/font.h \
- /opt/devkitpro/portlibs/3ds/include/curl/curl.h \
- /opt/devkitpro/portlibs/3ds/include/curl/curlver.h \
- /opt/devkitpro/portlibs/3ds/include/curl/system.h \
- /opt/devkitpro/portlibs/3ds/include/curl/easy.h \
- /opt/devkitpro/portlibs/3ds/include/curl/multi.h \
- /opt/devkitpro/portlibs/3ds/include/curl/curl.h \
- /opt/devkitpro/portlibs/3ds/include/curl/urlapi.h \
- /opt/devkitpro/portlibs/3ds/include/curl/options.h \
- /opt/devkitpro/portlibs/3ds/include/curl/header.h \
- /opt/devkitpro/portlibs/3ds/include/curl/websockets.h \
- /opt/devkitpro/portlibs/3ds/include/curl/typecheck-gcc.h \
- /home/sam/Documents/GitHub/navidrome-3ds/source/stb_image.h
+ /opt/devkitpro/libctru/include/c2d/font.h
 /home/sam/Documents/GitHub/navidrome-3ds/source/api.h:
 /home/sam/Documents/GitHub/navidrome-3ds/source/config.h:
 /home/sam/Documents/GitHub/navidrome-3ds/source/debug.h:
-/home/sam/Documents/GitHub/navidrome-3ds/source/ui.h:
+/opt/devkitpro/portlibs/3ds/include/curl/curl.h:
+/opt/devkitpro/portlibs/3ds/include/curl/curlver.h:
+/opt/devkitpro/portlibs/3ds/include/curl/system.h:
+/opt/devkitpro/libctru/include/sys/socket.h:
+/opt/devkitpro/portlibs/3ds/include/curl/easy.h:
+/opt/devkitpro/portlibs/3ds/include/curl/multi.h:
+/opt/devkitpro/portlibs/3ds/include/curl/curl.h:
+/opt/devkitpro/portlibs/3ds/include/curl/urlapi.h:
+/opt/devkitpro/portlibs/3ds/include/curl/options.h:
+/opt/devkitpro/portlibs/3ds/include/curl/header.h:
+/opt/devkitpro/portlibs/3ds/include/curl/websockets.h:
+/opt/devkitpro/portlibs/3ds/include/curl/typecheck-gcc.h:
 /opt/devkitpro/libctru/include/citro2d.h:
 /opt/devkitpro/libctru/include/citro3d.h:
 /opt/devkitpro/libctru/include/c3d/types.h:
@@ -193,7 +202,6 @@ api.o: /home/sam/Documents/GitHub/navidrome-3ds/source/api.c \
 /opt/devkitpro/libctru/include/3ds/services/pxipm.h:
 /opt/devkitpro/libctru/include/3ds/services/soc.h:
 /opt/devkitpro/libctru/include/netinet/in.h:
-/opt/devkitpro/libctru/include/sys/socket.h:
 /opt/devkitpro/libctru/include/3ds/services/mic.h:
 /opt/devkitpro/libctru/include/3ds/services/mvd.h:
 /opt/devkitpro/libctru/include/3ds/services/nfc.h:
@@ -241,15 +249,3 @@ api.o: /home/sam/Documents/GitHub/navidrome-3ds/source/api.c \
 /opt/devkitpro/libctru/include/c2d/sprite.h:
 /opt/devkitpro/libctru/include/c2d/text.h:
 /opt/devkitpro/libctru/include/c2d/font.h:
-/opt/devkitpro/portlibs/3ds/include/curl/curl.h:
-/opt/devkitpro/portlibs/3ds/include/curl/curlver.h:
-/opt/devkitpro/portlibs/3ds/include/curl/system.h:
-/opt/devkitpro/portlibs/3ds/include/curl/easy.h:
-/opt/devkitpro/portlibs/3ds/include/curl/multi.h:
-/opt/devkitpro/portlibs/3ds/include/curl/curl.h:
-/opt/devkitpro/portlibs/3ds/include/curl/urlapi.h:
-/opt/devkitpro/portlibs/3ds/include/curl/options.h:
-/opt/devkitpro/portlibs/3ds/include/curl/header.h:
-/opt/devkitpro/portlibs/3ds/include/curl/websockets.h:
-/opt/devkitpro/portlibs/3ds/include/curl/typecheck-gcc.h:
-/home/sam/Documents/GitHub/navidrome-3ds/source/stb_image.h:

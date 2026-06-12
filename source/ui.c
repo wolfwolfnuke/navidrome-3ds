@@ -231,9 +231,7 @@ static void draw_rect(float x, float y, float w, float h, u32 color) {
 static void draw_list(const char **names, int count,
                        int selected, int scroll, const char *title,
                        int draw_header) {
-    debug_log("[UI] draw_list called: title=%s, count=%d, selected=%d, scroll=%d", title, count, selected, scroll);
     if (count == 0) {
-        debug_log("[UI] No items to display");
         draw_rect(0, 0, BOT_W, BOT_H, COL_BG);
         draw_text(8, BOT_H/2 - 8, 0.5f, COL_DIM, "No results found.");
         return;
@@ -241,7 +239,6 @@ static void draw_list(const char **names, int count,
 
     if (draw_header) {
         // Header bar
-        debug_log("[UI] Drawing header bar: %s", title);
         draw_rect(0, 0, BOT_W, 30, COL_HEADER_BG);
         draw_text(8, 20, 0.55f, COL_ACCENT, title);
     }
@@ -253,7 +250,6 @@ static void draw_list(const char **names, int count,
 
         float y = LIST_Y + i * ROW_H;
         if (idx == selected) {
-            debug_log("[UI] Drawing selected item: %s", names[idx]);
             draw_rect(0, y - 2, BOT_W, ROW_H, COL_SELECTED);
         }
 
@@ -265,20 +261,17 @@ static void draw_list(const char **names, int count,
 
     // Scrollbar
     if (count > VISIBLE_ROWS) {
-        debug_log("[UI] Drawing scrollbar");
         float bar_h = (float)VISIBLE_ROWS / count * (BOT_H - LIST_Y);
         float bar_y = LIST_Y + (float)scroll / count * (BOT_H - LIST_Y);
         draw_rect(BOT_W - 4, LIST_Y, 4, BOT_H - LIST_Y, COL_DIM);
         draw_rect(BOT_W - 4, bar_y,  4, bar_h,           COL_ACCENT);
     }
-    debug_log("[UI] draw_list complete");
 }
 
 // ---------------------------------------------------------------------------
 // Top-screen "Now Playing" panel
 // ---------------------------------------------------------------------------
 static void draw_now_playing(const UiState *state) {
-    debug_log("[UI] draw_now_playing called");
     draw_rect(0, 0, TOP_W, TOP_H, COL_BG);
     draw_text(8, 20, 0.65f, COL_ACCENT, "Navidrome 3DS");
 
@@ -286,11 +279,9 @@ static void draw_now_playing(const UiState *state) {
         // Show current track info from UiState
         if (state->tracks.count > 0 && state->selected_track < state->tracks.count) {
             const NaviTrack *t = &state->tracks.items[state->selected_track];
-            debug_log("[UI] Drawing track info: %s - %s", t->title, t->artist);
-            
+
             // Draw album cover if available
             if (state->album_cover.tex) {
-                debug_log("[UI] Drawing album cover");
                 float coverX = TOP_W - 100 - 8; // 100px wide, 8px margin
                 float coverY = 40;
                 // Album cover dimensions (fixed for now)
@@ -298,7 +289,6 @@ static void draw_now_playing(const UiState *state) {
                 float coverH = 100;
                 C2D_DrawImageAt(state->album_cover, coverX, coverY, 0.5f, NULL, 1.0f, 1.0f);
             } else {
-                debug_log("[UI] No album cover available");
             }
 
             // Draw text info to the left of the album cover
@@ -306,25 +296,20 @@ static void draw_now_playing(const UiState *state) {
             draw_text(8, 78,  0.45f, COL_DIM,  t->artist);
             draw_text(8, 98,  0.42f, COL_DIM,  t->album);
         } else {
-            debug_log("[UI] No track selected or track list empty");
         }
 
         if (audio_is_playing()) {
             const char *playstate = audio_is_paused() ? "|| PAUSED" : "> PLAYING";
-            debug_log("[UI] Playback state: %s", playstate);
             draw_text(8, 128, 0.5f, COL_ACCENT, playstate);
 
             float vol = audio_get_volume();
-            debug_log("[UI] Current volume: %.2f", vol);
             draw_text(8,   158, 0.42f, COL_DIM, "Volume");
             draw_rect(8,   168, 180, 7, COL_DIM);
             draw_rect(8,   168, 180.0f * vol, 7, COL_ACCENT);
         } else {
-            debug_log("[UI] Track is downloading");
             draw_text(8, 128, 0.45f, COL_DIM, "Downloading...");
         }
     } else {
-        debug_log("[UI] No track playing");
         draw_text(8, 90,  0.5f,  COL_DIM, "No track playing.");
         draw_text(8, 115, 0.45f, COL_DIM, "Browse on the bottom screen.");
     }
@@ -333,7 +318,6 @@ static void draw_now_playing(const UiState *state) {
     draw_rect(0, TOP_H - 24, TOP_W, 24, COL_HEADER_BG);
     draw_text(4, TOP_H - 6, 0.38f, COL_DIM,
         "START:Pause  L/R:Vol  B:Back  A:Select");
-    debug_log("[UI] draw_now_playing complete");
 }
 
 // ---------------------------------------------------------------------------
@@ -454,21 +438,16 @@ void ui_draw(const UiState *state, C3D_RenderTarget *top, C3D_RenderTarget *bott
 
 
 bool ui_handle_input(UiState *state) {
-    debug_log("[UI] ui_handle_input called");
-    hidScanInput();
+        hidScanInput();
     u32 down  = hidKeysDown();
     u32 held  = hidKeysHeld();
     static u32 repeat_timer = 0;
     static u32 last_held = 0;
 
-    // Log input state
-    debug_log("[UI] Input state: down=0x%X, held=0x%X", down, held);
-
     // Key repeat logic (simple, per frame)
     if (held & (KEY_DUP | KEY_DDOWN)) {
         if (last_held != held) {
             repeat_timer = 0; // reset on new press
-            debug_log("[UI] Key repeat timer reset");
         } else {
             repeat_timer++;
         }
@@ -477,7 +456,6 @@ bool ui_handle_input(UiState *state) {
         if (repeat_timer > 90) interval = 2;
         if (repeat_timer == 15 || (repeat_timer > 15 && (repeat_timer % interval == 0))) {
             down |= held & (KEY_DUP | KEY_DDOWN);
-            debug_log("[UI] Key repeat triggered: down=0x%X", down);
         }
     } else {
         repeat_timer = 0;
@@ -491,20 +469,16 @@ bool ui_handle_input(UiState *state) {
         case SCREEN_ARTISTS:
             sel = &state->selected_artist; 
             max = state->artists.count; 
-            debug_log("[UI] Current screen: ARTISTS, selected=%d, count=%d", *sel, max);
             break;
         case SCREEN_ALBUMS:
             sel = &state->selected_album; 
             max = state->albums.count; 
-            debug_log("[UI] Current screen: ALBUMS, selected=%d, count=%d", *sel, max);
             break;
         case SCREEN_TRACKS:
             sel = &state->selected_track; 
             max = state->tracks.count; 
-            debug_log("[UI] Current screen: TRACKS, selected=%d, count=%d", *sel, max);
             break;
         default:
-            debug_log("[UI] Current screen: PLAYER or unknown");
             break;
     }
 
@@ -615,7 +589,6 @@ bool ui_handle_input(UiState *state) {
         }
     }
 
-    debug_log("[UI] ui_handle_input complete, no state change");
     return false;
 }
 
