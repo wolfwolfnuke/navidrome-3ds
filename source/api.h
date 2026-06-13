@@ -1,12 +1,14 @@
 #pragma once
 #include "config.h"
 #include <stddef.h>
+#include <citro2d.h>
 
 #define MAX_ITEMS    1000
 #define MAX_NAME_LEN 64
 #define MAX_ID_LEN   32
 
 // ---- Data structures ----
+typedef struct UiState UiState;
 
 typedef struct {
     char id[MAX_ID_LEN];
@@ -66,3 +68,14 @@ int api_get_tracks(const char *album_id, NaviTrackList *out);
 
 // Build a stream URL for a track (written into buf, len bytes)
 void api_stream_url(const char *track_id, char *buf, size_t len);
+
+// Result of loading an album cover image
+typedef struct {
+    C2D_Image image;
+    void *tex;       // C3D_Tex*, free this with free()
+    void *subtex;    // Tex3DS_SubTexture*, free this with free()
+} AlbumCoverResult;
+
+// Fetch album cover image; fills out on success. Returns 0 on success, -1 on error.
+// Caller must free result->tex and result->subtex with free() when done.
+int api_get_album_cover(const char *album_id, AlbumCoverResult *out);

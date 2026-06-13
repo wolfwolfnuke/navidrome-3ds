@@ -3,12 +3,12 @@ Boot OK
 Initializing citro3d/citro2d...
 citro2d OK
 Creating render targets...
-[DBG] mem free before targets: 91548 KB
+[DBG] mem free before targets: 91800 KB
 [DBG] linear free before targets: 30377 KB
 [DBG] after top target alloc
 [DBG] after bottom target alloc
-[DBG] top target: 0x800c860, bottom target: 0x800c8e0
-[DBG] mem free after targets: 91548 KB
+[DBG] top target: 0x800c8c0, bottom target: 0x800c900
+[DBG] mem free after targets: 91800 KB
 [DBG] linear free after targets: 30377 KB
 Initializing networking...
 socInit: OK
@@ -16,14 +16,20 @@ httpcInit OK
 Initializing audio subsystem...
 ndspInit: OK
 Allocating UI state...
-UiState allocation OK: 0x801a9b0
+UiState allocation OK: 0x801a9f0
 Initializing UI...
-[ENTER] ui_init()
+[UI] ui_init called
+[UI] Creating text buffer with size 65536
 [UI] fonts_init called
-[UI] Loaded standard font, count=0
-[UI] fonts_init complete, total fonts=0
+[UI] Attempting to load system font (CFG_REGION_USA)
+[UI] ERROR: Failed to load standard system font (CFG_REGION_USA), trying fallback .bcfnt from romfs
+[UI] Attempting to load fallback font from romfs/popjoy.bcfnt
+[UI] Successfully loaded fallback font from romfs/popjoy.bcfnt
+[UI] fonts_init complete, total fonts loaded: 1
+[UI] Initializing album cover image
+[UI] ui_init complete
 Loading config...
-Before config_load: state=0x801a9b0
+Before config_load: state=0x801a9f0
 [CONFIG] config_load called
 [CONFIG] config_defaults called
 [CONFIG] config_defaults set host=192.168.1.100, port=4533, user=admin
@@ -38,16 +44,572 @@ Before config_load: state=0x801a9b0
 [CONFIG] config_load complete: host=192.168.1.50, port=4533, user=wolfwolfnuke
 Server: 192.168.1.50:4533
 Initializing API and audio...
-Before api_init: state=0x801a9b0
+Before api_init: state=0x801a9f0
 [ENTER] api_init()
 [API] Initializing with host=192.168.1.50, port=4533, user=wolfwolfnuke
 [API] curl_global_init complete
 Calling audio_init...
 [ENTER] audio_init()
-audio_init: pcm_buf=0x30255c00
+audio_init: pcm_buf=0x30762d00
 audio_init: thread stack 1024 KB
 [EXIT] audio_init() rc=0
 audio_init: 0
+Pinging server...
+[API] api_ping called
+[API] Built URL for endpoint 'ping': http://192.168.1.50:4533/rest/ping?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml
+[API] Ping URL: http://192.168.1.50:4533/rest/ping?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml
+[API] Buffer allocated: capacity=4096
+[API] Ping buf.data=0x82ecac0 buf.len=0
+[API] http_get called: url=http://192.168.1.50:4533/rest/ping?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml
+[API] Performing curl_easy_perform...
+[API] HTTP response code: 200
+[API] http_get finished: url=http://192.168.1.50:4533/rest/ping?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml, code=200
+[API] Ping HTTP code: 200
+[API] Ping buf.data=0x82ecac0 buf.len=175
+[API] Ping body hex (175 bytes): 3C 73 75 62 73 6F 6E 69 63 2D 72 65 73 70 6F 6E 73 65 20 78 6D 6C 6E 73 3D 22 68 74 74 70 3A 2F 2F 73 75 62 73 6F 6E 69 63 2E 6F 72 67 2F 72 65 73 74 61 70 69 22 20 73 74 61 74 75 73 3D 22 6F 6B 22 20 76 65 72 73 69 6F 6
+[API] Ping body text: <subsonic-response xmlns="http://subsonic.org/restapi" status="ok" version="1.16.1" type="navidrome" serverVersion="0.60.3 (34c6f12a)" openSubsonic="true"></subsonic-response>
+[API] Ping strstr("status=\"ok\"") = 0x82ecaf7
+[API] Ping ok=1 code=200 data=0x82ecac0 len=175
+[API] Buffer freed: capacity=4096, length=175
+[API] api_ping returning 0
+Ping OK, loading artists...
+[API] api_get_artists called
+[API] Built URL for endpoint 'getArtists': http://192.168.1.50:4533/rest/getArtists?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml
+[API] getArtists URL: http://192.168.1.50:4533/rest/getArtists?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml
+[API] Buffer allocated: capacity=4096
+[API] http_get called: url=http://192.168.1.50:4533/rest/getArtists?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml
+[API] Performing curl_easy_perform...
+[API] HTTP response code: 200
+[API] http_get finished: url=http://192.168.1.50:4533/rest/getArtists?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml, code=200
+[API] getArtists HTTP code: 200
+[API] Parsed artist: id=32sf9bpds6aN0CgE0sc8gk, name="Weird Al" Yankovic
+[API] Parsed artist: id=1c6hNhIks5AAbzfPa0DVTT, name=3rd Prototype
+[API] Parsed artist: id=3jSlKS2GOYvZZT2vEXBixZ, name=3rd Prototype & Emdi
+[API] Parsed artist: id=6GQjkQId1rbvMcLZoyZbmO, name=8-Bit Misfits
+[API] Parsed artist: id=6QBzs5MKeYw7Ihdxd18UUp, name=おやすみ世界01 & Hatsune Miku
+[API] Parsed artist: id=0UAUbzqPsG3RSiIAimdEkC, name=さつき が てんこもり
+[API] Parsed artist: id=2WOuL8X0QCQkfpu6dfcNRk, name=ギガP
+[API] Parsed artist: id=5cubJMZ6cE38c1sjobnrkz, name=柊マグネタイト
+[API] Parsed artist: id=0YZ0dPghxYgcDGFMZm60eM, name=鬼蜘蛛卜狐ノ獅子ト
+[API] Parsed artist: id=6cqpZWnP0Tlqz8Ld7Jiy8V, name=Aaron Cherof
+[API] Parsed artist: id=4FbiK9tSOitwGDwoMUzJhG, name=Aaron Cherof, Kumi Tanioka & Lena Raine
+[API] Parsed artist: id=2NxI9cGlctxvCndRaZ08Ql, name=Abtmelody
+[API] Parsed artist: id=4L2TstryC20xcT2LbijHM5, name=Adam Burgess
+[API] Parsed artist: id=6C2XzsL5qwhzf3G6NhbI3U, name=Aero Chord
+[API] Parsed artist: id=74lqiZV1FdlT4IC1SpzjVc, name=Against the Current
+[API] Parsed artist: id=3PNQNRCdDBRVkiFFcW4dpG, name=AJR
+[API] Parsed artist: id=2R8lsoAdlWxaeJjivX5aIK, name=Alan Walker & Alex Skrindo
+[API] Parsed artist: id=3II4fMGQ2Mt5i97g1rY1hr, name=Alex Leavon & Jonny Rose
+[API] Parsed artist: id=0AmQKpWmCoYjr6wnv39nAB, name=Alstroemeria Records
+[API] Parsed artist: id=2u13hiG4CjID5LQZARemDz, name=American Authors
+[API] Parsed artist: id=1eD88W1UzdxTOMY3NIrm32, name=Anamanaguchi
+[API] Parsed artist: id=71CU3hOrf5dCIY46V5eghJ, name=Anikdote
+[API] Parsed artist: id=6jt4lIigC4Zy7bz9dtuJbQ, name=Anything_F_744
+[API] Parsed artist: id=2eHuKeSdJueCbEZ10wz51V, name=Ariana Grande
+[API] Parsed artist: id=5p8aA8ZqtAw0HLiNMV4tcW, name=Arthur Fiedler & Boston Pops Orchestra
+[API] Parsed artist: id=2OPouaE7yZPNcVTGP8K6ra, name=AsapSCIENCE
+[API] Parsed artist: id=5Z3dIxYSFsqEZsiudJBvHn, name=Avicii
+[API] Parsed artist: id=3m4lCPJXRMDrDSXUj3Xm7U, name=Bad Lip Reading
+[API] Parsed artist: id=4QLAPnxJmhcVMZmBsWs612, name=Benji.
+[API] Parsed artist: id=4Ctm8oMAJUCiFehQVxGDHY, name=Beverly Hills Cop
+[API] Parsed artist: id=62RVrmNODM3Hv6S54j3vuB, name=Billie Bust Up
+[API] Parsed artist: id=2cUlR50RVMP4dAUFB7ghi6, name=Billie Eilish
+[API] Parsed artist: id=3Qg2RzYIXnWMiiklrrZk5f, name=Black Gryph0n, Jayn & Dan Bull
+[API] Parsed artist: id=6iQnH12ARK8WnF0XFA5hVo, name=BLACKPINK
+[API] Parsed artist: id=3eiGgMceWi22vmtXIBJ1VF, name=Bobby Cole
+[API] Parsed artist: id=0wC2iScypkqUYMxdUqHqIx, name=Bomba Estéreo
+[API] Parsed artist: id=5ZOxePs1irUHyc5MF9XD2D, name=Brad Knauber
+[API] Parsed artist: id=0m1AF29B5Hz7R9iA8s3L9P, name=Brian Tyler
+[API] Parsed artist: id=1jcDD67odHx6MuUmSioLzJ, name=The Brig & MIDNIGHT CVLT
+[API] Parsed artist: id=1e1E3zsAgrQJHYFQQ9Zyes, name=Britney Spears
+[API] Parsed artist: id=6d6iF2ZwAljVVPNO0LDM0I, name=C418
+[API] Parsed artist: id=259opA1pv3FN3t7u4oMs7F, name=Calvin Harris
+[API] Parsed artist: id=37cGmrIV88UKJrnr1qpTf3, name=Caravan Palace
+[API] Parsed artist: id=3YRRGuiz5jd7jw4swWNrei, name=Casiopea
+[API] Parsed artist: id=4RD1Avt1lMwgK7VbepbonA, name=Catiso
+[API] Parsed artist: id=2rhiz61XLXvcYRIrWVkYTt, name=CG5
+[API] Parsed artist: id=2PvDxjpzphDjhmvOdYsksZ, name=The Chalkeaters
+[API] Parsed artist: id=7043KyYgkpgKga8AxzterW, name=The Chemical Brothers
+[API] Parsed artist: id=09p6Qly11o46dqe50n7id8, name=ChiliChill
+[API] Parsed artist: id=1qgn33wdKhh0oDw7uJ21o2, name=Chris Christodoulou
+[API] Parsed artist: id=0RLfeN6srDMYyOnp9CnLwy, name=Chris Linton
+[API] Parsed artist: id=4RJTuSkkKkQHqP2pxA4ctH, name=Clarx
+[API] Parsed artist: id=4EhUxV7KQItRi1cl77Ljtz, name=Clean Bandit
+[API] Parsed artist: id=3jNKy5fB1vQxr39XQn97jr, name=Daft Punk
+[API] Parsed artist: id=42d3KtQJ2VIrXdqR4V9igq, name=Dan Bull
+[API] Parsed artist: id=24Nxg54ITWaEOu5DnNLqpu, name=Danny Baranowsky
+[API] Parsed artist: id=7tjrAgncLv4pDkzL8qU2w2, name=Dead or Alive
+[API] Parsed artist: id=51urZ28FT86jamh7mOR5PJ, name=Debris & Jonth
+[API] Parsed artist: id=6lWLX60BDisZdByaX3ih8R, name=DECO*27
+[API] Parsed artist: id=1cCGH8FzunMOv3h8Y6kFU4, name=DECO*27 & PinocchioP
+[API] Parsed artist: id=28c8KEDHLHI8e6jy6TCyn6, name=Deep Purple
+[API] Parsed artist: id=4CNmlsnzvjeAOLOYhpQsT9, name=Derek Duke & Adam Burgess
+[API] Parsed artist: id=2bEQj8x5A9GuvfxVhc81gT, name=Dillon Francis
+[API] Parsed artist: id=7fWcUsZXi7MM8EzYuza8zC, name=Dirty Palm & Benix
+[API] Parsed artist: id=5SJmtbUBLmh0L4jCyl6xmv, name=DJ Snake
+[API] Parsed artist: id=5fw9JZqI6SYaxDgxEPUato, name=DNCE
+[API] Parsed artist: id=1ywbprGpT4z8Wwk2C8iBU2, name=Dominik Hauser & Hauser Studio Orchestra
+[API] Parsed artist: id=3XVZFsvG87khra1WsXBGdz, name=Dual Core
+[API] Parsed artist: id=1xocn9k9kQGMkN3JS258Z5, name=Duke & Jones & Louis Theroux
+[API] Parsed artist: id=5TliXJ7ZOlPqWSAMpqlJgF, name=DYSON
+[API] Parsed artist: id=4pFGjqXbLCgGyPkDB3c1w0, name=EARTHGANG
+[API] Parsed artist: id=7dB07x8Q2P9jPvGeDHxIFa, name=Ed Sheeran
+[API] Parsed artist: id=2VPtyAtBPGMAWEZeNB0dDG, name=EH!DE
+[API] Parsed artist: id=1GHeJ9hYYKr0QllVTKicx1, name=Eiffel 65
+[API] Parsed artist: id=0NLk6yz1zc9ntbyJaRn7x0, name=Elektronomia
+[API] Parsed artist: id=3jabhQlzUFThT4a17MwpRf, name=Ella Eyre
+[API] Parsed artist: id=3lqpXUJs079kOErJVNk8sb, name=Emdi
+[API] Parsed artist: id=6XNNZ2unNfO5jx1J4xYNBS, name=Eminem
+[API] Parsed artist: id=00gzqPiBtycBS3WjfGrrCq, name=Europe
+[API] Parsed artist: id=1b036GJ0LoLZC2A8zoEk7z, name=F‐777
+[API] Parsed artist: id=5q4ka7zLeWbZVfriqPAvHf, name=FalKKonE
+[API] Parsed artist: id=5BmSnJZriNrPWyH9Y4fpws, name=Fall Out Boy
+[API] Parsed artist: id=1YIlyLW6H02QohCVqiojzS, name=FLAVOR FOLEY
+[API] Parsed artist: id=5TMleXQcYkCdAMKLx4rhRx, name=Flo Rida
+[API] Parsed artist: id=6HucP0MujI1ANB3Xkuz9y5, name=FloFilz & Takuya Kuroda
+[API] Parsed artist: id=3RKkdevQT2vLF7caxRV3K0, name=Focus Fire
+[API] Parsed artist: id=461CyJJKfDHpuTetgByKJW, name=Forever Bound
+[API] Parsed artist: id=5Di7uL4fEP9vOnhvQuiSMC, name=Gameloft
+[API] Parsed artist: id=38dBs0fscqB45GRUt7KlJv, name=Geek Music
+[API] Parsed artist: id=0ifKlYTaoQTwWn8GpidUK9, name=Grandayy
+[API] Parsed artist: id=23ra3QrHR5xT9UCszYFGYs, name=grande1899
+[API] Parsed artist: id=5Ha2HhUfNlEVktJOugbcYm, name=The Greatest Bits
+[API] Parsed artist: id=5vnWcWUpiX2cUZrpGN5uuH, name=Gummibär
+[API] Parsed artist: id=5x8lqGble2NbRl5yr40RDV, name=Halfbrick
+[API] Parsed artist: id=3Z5hEYVDGy3cCIKOlUD4ai, name=Harold Faltermeyer
+[API] Parsed artist: id=1ddn7BqVYPqihO2TJzRSwt, name=Harry Callaghan
+[API] Parsed artist: id=55shrgkqPQns2BxSTTiEED, name=Hatsune Miku
+[API] Parsed artist: id=0wJZeNPf6Wm8Xh4uMJ1rCA, name=Heitor Pereira
+[API] Parsed artist: id=41TVAFaxNTdMaCfgwTVS5X, name=Hilight Tribe
+[API] Parsed artist: id=7JHsbaenDLcvL5iupypHfZ, name=HintShot
+[API] Parsed artist: id=2gpbhdP7tCCi66UARSd0Dx, name=Imagine Dragons
+[API] Parsed artist: id=4yfUUMYOi5PRBRagfeAX5Q, name=The Irish Descendants
+[API] Parsed artist: id=1X8OYAqLld5JtJePsx4gjJ, name=Jay Vincent & Michael Kramer
+[API] Parsed artist: id=2W4GSoAKpJRMQL6FyQxVrA, name=Jex
+[API] Parsed artist: id=2HUuXKPStNGwDvsbuD0YEW, name=Joe Hisaishi
+[API] Parsed artist: id=18evnQT2VSake5P7i3PeiM, name=Jonth
+[API] Parsed artist: id=68VoPFVpIK7wdpseaWFJH3, name=Jonth & Hilefex
+[API] Parsed artist: id=5EvcuKWSLQBRYdtvHKrYpm, name=Jordan Maron
+[API] Parsed artist: id=2yCI2LoTvv5s82AZua8xEi, name=Kahoot!
+[API] Parsed artist: id=02DiEqiNBn3idZvY8XP1lr, name=Kanye West
+[API] Parsed artist: id=7950Ur3ZQ9HXr3bhDaS2Ej, name=Karl Flodin & Erik Lyding
+[API] Parsed artist: id=63fG1azoGjAdBEH3mGZjsd, name=Kenta Nagata & Shinobu Tanaka
+[API] Parsed artist: id=6IilS6cLxsMe5BRVQe0LZX, name=Kevin MacLeod
+[API] Parsed artist: id=0eN01ganXwk3aOd1aVBoY5, name=The Kiffness
+[API] Parsed artist: id=0nxMYShaV0EtVZmQaPiYEa, name=Kirby’s Dream Band
+[API] Parsed artist: id=7nUNkbUSmjO1RZhC3la6sW, name=KRAKŇ
+[API] Parsed artist: id=5BRdTfdKBtiZsjPtIuC6qu, name=Krubb Wenkroist
+[API] Parsed artist: id=3BRKqMcMM0SC3fICvXYuBi, name=Laudividni
+[API] Parsed artist: id=5EV3XCscCfvWECp7xjiFte, name=Laura Brehm
+[API] Parsed artist: id=70YNK5coUe4su7UnIvkodG, name=Laura Shigihara
+[API] Parsed artist: id=6cl7SMdCe6gshPfFrWzQQ8, name=Lemaitre
+[API] Parsed artist: id=0cqjREqKt6mULEowBCaPcS, name=Lena Raine
+[API] Parsed artist: id=5lAp9JA4nvsVM7YOJCwt6M, name=Lena Raine & Kumi Tanioka
+[API] Parsed artist: id=2sIsG0akx1uaWeACuRXtKl, name=Lena Raine & Samuel Åberg
+[API] Parsed artist: id=0MHI7RFc6ylm6sTSTmV4Uo, name=Lensko
+[API] Parsed artist: id=2MKYfAUhSqWOJHnjbmWo4Q, name=LFZ
+[API] Parsed artist: id=5F9xJuxXD3Rf6rynJph6Vt, name=LilDeuceDeuce
+[API] Parsed artist: id=5jDIQ07P8V7UQ5BjFbK7mI, name=Lin‐Manuel Miranda & Germaine Franco
+[API] Parsed artist: id=1AyQYCSDovo8vp3W0sVfIR, name=The Living Tombstone
+[API] Parsed artist: id=2v3sGbwtvObQaCNogQYYIB, name=London Philharmonic Orchestra
+[API] Parsed artist: id=4zvQkCIsSTQ3NOrksWDiDQ, name=London Philharmonic Orchestra & David Parry
+[API] Parsed artist: id=5av2Q1ZWOxxqLRx3HTu0nc, name=Lorne Balfe
+[API] Parsed artist: id=4yAczWZSoGawrpjF5m27Gs, name=Lost Sky
+[API] Parsed artist: id=4fNzHPGWp9JjtjuLraa57C, name=lovelytheband
+[API] Parsed artist: id=6RgGkW23ja0foaq5hSyKcd, name=Macklemore & Ryan Lewis
+[API] Parsed artist: id=7gLwDzfI7i9lmPtvvx9MSg, name=Mark Mothersbaugh
+[API] Parsed artist: id=5junYidpUbb5Kbvalo8E32, name=Marshmello
+[API] Parsed artist: id=0WpHAS8jq8aaABtG6OHOU3, name=Martin Garrix
+[API] Parsed artist: id=48Lwx25F5cVYpTdzGmZPWq, name=Masafumi Ogata & Naofumi Hataya
+[API] Parsed artist: id=6ZWe8s2dL9yeA6l2FAao3q, name=Masked Wolf
+[API] Parsed artist: id=5fAIYxmiJTLLMtkXaRzTfh, name=The Matchroom Mob with Chas & Dave
+[API] Parsed artist: id=3of7ZKoCzDsdwxLRqQdjWT, name=Max Brhon
+[API] Parsed artist: id=7cOhkGTgJPz8BRZ3x4VDTr, name=MDK
+[API] Parsed artist: id=3bR0zjNmE8BZN1kbkRWAq6, name=Melo.Kids
+[API] Parsed artist: id=46kDG1KtjKy2jsxaMAdyex, name=MiatriSs
+[API] Parsed artist: id=2e7ITXeQIGP7POjgdV44f7, name=Michael Giacchino
+[API] Parsed artist: id=5PG1DqNnTcsMjWgGpiKB5p, name=Michael Jackson
+[API] Parsed artist: id=01IivneLc4qg4dAoSHKh6C, name=Midranger
+[API] Parsed artist: id=7u1pfmvyfEoXCeYFnuqMvw, name=Mike Morasky
+[API] Parsed artist: id=7lE4E8w98pTDMx3P1Qh9F1, name=MillerPlanet
+[API] Parsed artist: id=69fNCz4H6HIkf5ITRP38wa, name=Minecraft Mix
+[API] Parsed artist: id=32SDd7wTnDZmRctEEjEz1o, name=The Minions
+[API] Parsed artist: id=63Evlr1S1DaQhbmLEdqd92, name=Mykah
+[API] Parsed artist: id=5JT8f0ixretcVdl0omRyzr, name=Nathan Evans
+[API] Parsed artist: id=5dflVQyxUVfqdEyHYitBjo, name=Nathan Evans & The Kiffness
+[API] Parsed artist: id=6pRX9SF4RStkD6fDpCqwGD, name=Neal Acree, Sam Cardon, Derek Duke & Cris Velasco
+[API] Parsed artist: id=4NoKVdle2Pp7XEE82AVjvv, name=Neon X
+[API] Parsed artist: id=0CAZeC2ib56975IPkmoyoe, name=Nintendo
+[API] Parsed artist: id=0wWZsvPKYNxFcOkuXhoIjm, name=Nintendo Sound Team
+[API] Parsed artist: id=4gL5jV0U1FBMUcf4MxGJXL, name=NIVIRO
+[API] Parsed artist: id=5XmdydXiGoN0yuYboVUuy9, name=Noisestorm
+[API] Parsed artist: id=4z4xyzFGHTdHucjXdQ5E6L, name=The Northstar Singers
+[API] Parsed artist: id=4CLzbcgqPqWQcWXYqH0v2t, name=Olly Murs
+[API] Parsed artist: id=330bRlnfvHBMDYlTVBphoo, name=OneRepublic
+[API] Parsed artist: id=6zC8DNTlRedlHy0kWIIFv3, name=P!nk
+[API] Parsed artist: id=49ansoaslMtUVordv5gfl1, name=panpan
+[API] Parsed artist: id=5pmSQ9gLr9dUXviKOCaEpF, name=Parry Gripp
+[API] Parsed artist: id=0oKdKYmPFGQ2UrVqwGWBcv, name=Pentatonix
+[API] Parsed artist: id=1GEaQv5NOEFiX3aID6foAt, name=Pharrell Williams
+[API] Parsed artist: id=7HCKS4P0YK9g9VksbW34ra, name=Pharrell Williams & Heitor Pereira
+[API] Parsed artist: id=2DdILseYOdP9hG93XPCtK7, name=Pitbull
+[API] Parsed artist: id=75LCCQyQNleyH1YdBdipvv, name=Polybrow
+[API] Parsed artist: id=6qRsqjPKi2mtJdhya9aPzB, name=The Proclaimers
+[API] Parsed artist: id=0uYc4RhdX2sYkHtSlWZxxr, name=PsoGnar
+[API] Parsed artist: id=4jKZsUyRYlu8JAoNBCPBsX, name=PSY
+[API] Parsed artist: id=3Ip9OhiD4x1NDAKaSF7NQW, name=Queen
+[API] Parsed artist: id=253yvjggTHZxoc2fe1Jgpb, name=Qumu
+[API] Parsed artist: id=60HW8QD51diGcsjIyLI2ba, name=Radio Gosha × Disko Warp
+[API] Parsed artist: id=5R3PPtrR771ZJi65Ic3nlH, name=RAYE
+[API] Parsed artist: id=2GlNxA8QG4sZ3YfmaXdIKA, name=Re‐Logic
+[API] Parsed artist: id=6dH46usDzgYzsHXYx3JHPi, name=Rednex
+[API] Parsed artist: id=6hqLlU0loROAHfHj8mVgl5, name=RetroVision
+[API] Parsed artist: id=1sJg05O819zIWNcr1RblNw, name=Rihanna
+[API] Parsed artist: id=7b2kDDSZy614wqLEFP4hpn, name=Rob Gasser
+[API] Parsed artist: id=7iNEKu6cighkwCa2lxoQzx, name=Robin Hustin
+[API] Parsed artist: id=6f7fgjIYxBxdJo6FXKrTL5, name=Robin Hustin & Tobimorrow
+[API] Parsed artist: id=5ls2YuXLZ7FwUtgEsTz8jx, name=ROSÉ & Bruno Mars
+[API] Parsed artist: id=0N65GlV2RjVnaHHpkjx7UM, name=Ruelle
+[API] Parsed artist: id=0tVJHZd2UabKmWXfovyxHo, name=Sara Skinner
+[API] Parsed artist: id=56wpz9bn28ktVA5Q4KNra7, name=SAWTOWNE
+[API] Parsed artist: id=1fFbYKXN3OffZpcggCr9GV, name=The Score
+[API] Parsed artist: id=677A9AG9HYzjlWf62dzxeC, name=Scott Lloyd Shelly
+[API] Parsed artist: id=02GGZjRDxbPhufNKZAwNBe, name=Shawn Mendes
+[API] Parsed artist: id=27TwlB3iQLO0tkM2sMyET5, name=Sheet Music Boss
+[API] Parsed artist: id=7vkhrW06VEH24bxDOs2VMo, name=Shirobon
+[API] Parsed artist: id=5LLsEV6ub0wV5KEQBG7rC9, name=Skrillex
+[API] Parsed artist: id=7yn0IGxpWvM1aDUU3Psxhf, name=Slushii & Tokyo Machine
+[API] Parsed artist: id=5j2lXCsn7VNkqRufDLvXZk, name=Slushii x Tokyo Machine
+[API] Parsed artist: id=7uAv3lEnk5Jya4proBIC2C, name=Smokey Mountain
+[API] Parsed artist: id=6AIYvQrChO8dyAWlcnrVbk, name=Static & Ben El
+[API] Parsed artist: id=7t3ehiTX43BdAIHDbbzmt3, name=The Streets
+[API] Parsed artist: id=57cJvgDPLhmIrEr7ZItgou, name=The Stupendium
+[API] Parsed artist: id=2EjaUCPmswzl1DvMkLIJZK, name=Sub Urban
+[API] Parsed artist: id=5BS3ZXktEdWTdxuvLJGkLJ, name=T‐Pain & That Girl Lay Lay
+[API] Parsed artist: id=2Ecg2XNa4bbiYVRDyLv9pA, name=T.I.
+[API] Parsed artist: id=4qNcXeZOAUnmlPXVfNwWj8, name=TAK
+[API] Parsed artist: id=5OoNFGG2FBZcM62bdTJ6zH, name=Takuya Kuroda
+[API] Parsed artist: id=0Ajxuqmp47XqxCSco9jQoz, name=Taylor Swift
+[API] Parsed artist: id=0AE4dlt2jkMK0mCAx3y9vS, name=Tee Lopes
+[API] Parsed artist: id=5c8Yhy9fXPit3Iz7NGApMf, name=Teminite
+[API] Parsed artist: id=1boM7CGTdPpgqKjAR2bVYE, name=Teminite x Boom Kitty x Waterflame
+[API] Parsed artist: id=3a5CKfn7wtDCQzWpkXLa5K, name=TeraBrite
+[API] Parsed artist: id=2m9ZUyH4MMs5BWXAwqShvY, name=TheFatRat
+[API] Parsed artist: id=2fhUjREFdJEOILp4ydb3xu, name=TheFatRat & AleXa
+[API] Parsed artist: id=3NURbwkLzNbsB5ncljy0Ez, name=TheFatRat & Anjulie
+[API] Parsed artist: id=5HeY6yR4HMjRFqZEwt1oEj, name=TheFatRat & Cecilia Gault
+[API] Parsed artist: id=13ftVjMphN4cPaWpC64NoZ, name=TheFatRat & Laura Brehm
+[API] Parsed artist: id=7BXrJ18ekQ5UJ4xD2orEJJ, name=TheFatRat & Maisy Kay
+[API] Parsed artist: id=70tbwP88lytvdz5PyrOOYa, name=TheFatRat & Shiah Maisel
+[API] Parsed artist: id=587LUoTFsBWXFbsb6Z80U9, name=TheRealSullyG
+[API] Parsed artist: id=3FtBvEzrXWJqkD98GbsKtH, name=Tiësto
+[API] Parsed artist: id=21WmPB5e0SJQRpByIiq1RR, name=Tobuscus
+[API] Parsed artist: id=7AKugaq2QyxRmg8l50R0ag, name=Toby Fox
+[API] Parsed artist: id=4eRUwtFkB1T23gSHIzTARc, name=Toby Turner
+[API] Parsed artist: id=1getP3s4rU95sKgJoiWqSX, name=Tokyo Machine
+[API] Parsed artist: id=3CYOZH2X9BlIafCYJFBmoF, name=Tokyo Machine & CHOMPO
+[API] Parsed artist: id=3qN2yDxz9BsLnq2NjBU54d, name=TomSka & BlackGryph0n
+[API] Parsed artist: id=6xXcw54k900jUQSJEU009f, name=TomSka & The Gregory Brothers
+[API] Parsed artist: id=6y3leAgbfMWmJ081hKTPPn, name=TryHardNinja
+[API] Parsed artist: id=0c0Sh9hAEF7ua0mYHkOXgB, name=Uplink & Sweet Harmony
+[API] Parsed artist: id=7sUK5GfuLuEejmJTTVEPu0, name=Valve Studio Orchestra
+[API] Parsed artist: id=63sqASlAfjbGMuLP4JhnZU, name=Various Artists
+[API] Parsed artist: id=4rPUwyaqZsDHCagDaHoCVF, name=VGR
+[API] Parsed artist: id=09fkqw56ldVDOKtAlxHzLP, name=W&W
+[API] Parsed artist: id=1bGa31B7wrxW6T8D5QZ2Io, name=Walk off the Earth
+[API] Parsed artist: id=0kEaMHKkyMCRm6KiveHBpi, name=Walt Disney Records
+[API] Parsed artist: id=6LDt5i37i0dbtoz1OYJBjq, name=Warriyo
+[API] Parsed artist: id=1xSIw7IZ1wQcufanMQzFe3, name=Waterflame
+[API] Parsed artist: id=70JAIqMvlUm9oJs1rtikOt, name=Wintergatan
+[API] Parsed artist: id=7AupcU1Hh1Mqiz2k3u3n80, name=Yvar
+[API] Parsed artist: id=4n6PWRH7prp9U2yY85DnsV, name=Zayde Wølf
+[API] Parsed artist: id=6CWdUxcu26KWyceDTdDPBE, name=Zedd & Jasmine Thompson
+[API] api_get_artists loaded 242 artists
+[API] Buffer freed: capacity=151944, length=114541
+Artists loaded: 242
+Artist[0]: '"Weird Al" Yankovic' bytes: 22 57 65 69 72 64 20 41 6C 22 20 59 
+Artist[1]: '3rd Prototype' bytes: 33 72 64 20 50 72 6F 74 6F 74 79 70 
+Artist[2]: '3rd Prototype & Emdi' bytes: 33 72 64 20 50 72 6F 74 6F 74 79 70 
+Artist[3]: '8-Bit Misfits' bytes: 38 2D 42 69 74 20 4D 69 73 66 69 74 
+Artist[4]: 'おやすみ世界01 & Hatsune Miku' bytes: E3 81 8A E3 82 84 E3 81 99 E3 81 BF 
+Pinging server...
+[API] api_ping called
+[API] Built URL for endpoint 'ping': http://192.168.1.50:4533/rest/ping?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml
+[API] Ping URL: http://192.168.1.50:4533/rest/ping?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml
+[API] Buffer allocated: capacity=4096
+[API] Ping buf.data=0x82ecac0 buf.len=0
+[API] http_get called: url=http://192.168.1.50:4533/rest/ping?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml
+[API] Performing curl_easy_perform...
+[API] HTTP response code: 200
+[API] http_get finished: url=http://192.168.1.50:4533/rest/ping?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml, code=200
+[API] Ping HTTP code: 200
+[API] Ping buf.data=0x82ecac0 buf.len=175
+[API] Ping body hex (175 bytes): 3C 73 75 62 73 6F 6E 69 63 2D 72 65 73 70 6F 6E 73 65 20 78 6D 6C 6E 73 3D 22 68 74 74 70 3A 2F 2F 73 75 62 73 6F 6E 69 63 2E 6F 72 67 2F 72 65 73 74 61 70 69 22 20 73 74 61 74 75 73 3D 22 6F 6B 22 20 76 65 72 73 69 6F 6
+[API] Ping body text: <subsonic-response xmlns="http://subsonic.org/restapi" status="ok" version="1.16.1" type="navidrome" serverVersion="0.60.3 (34c6f12a)" openSubsonic="true"></subsonic-response>
+[API] Ping strstr("status=\"ok\"") = 0x82ecaf7
+[API] Ping ok=1 code=200 data=0x82ecac0 len=175
+[API] Buffer freed: capacity=4096, length=175
+[API] api_ping returning 0
+Ping OK, loading artists...
+[API] api_get_artists called
+[API] Built URL for endpoint 'getArtists': http://192.168.1.50:4533/rest/getArtists?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml
+[API] getArtists URL: http://192.168.1.50:4533/rest/getArtists?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml
+[API] Buffer allocated: capacity=4096
+[API] http_get called: url=http://192.168.1.50:4533/rest/getArtists?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml
+[API] Performing curl_easy_perform...
+[API] HTTP response code: 200
+[API] http_get finished: url=http://192.168.1.50:4533/rest/getArtists?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml, code=200
+[API] getArtists HTTP code: 200
+[API] Parsed artist: id=32sf9bpds6aN0CgE0sc8gk, name="Weird Al" Yankovic
+[API] Parsed artist: id=1c6hNhIks5AAbzfPa0DVTT, name=3rd Prototype
+[API] Parsed artist: id=3jSlKS2GOYvZZT2vEXBixZ, name=3rd Prototype & Emdi
+[API] Parsed artist: id=6GQjkQId1rbvMcLZoyZbmO, name=8-Bit Misfits
+[API] Parsed artist: id=6QBzs5MKeYw7Ihdxd18UUp, name=おやすみ世界01 & Hatsune Miku
+[API] Parsed artist: id=0UAUbzqPsG3RSiIAimdEkC, name=さつき が てんこもり
+[API] Parsed artist: id=2WOuL8X0QCQkfpu6dfcNRk, name=ギガP
+[API] Parsed artist: id=5cubJMZ6cE38c1sjobnrkz, name=柊マグネタイト
+[API] Parsed artist: id=0YZ0dPghxYgcDGFMZm60eM, name=鬼蜘蛛卜狐ノ獅子ト
+[API] Parsed artist: id=6cqpZWnP0Tlqz8Ld7Jiy8V, name=Aaron Cherof
+[API] Parsed artist: id=4FbiK9tSOitwGDwoMUzJhG, name=Aaron Cherof, Kumi Tanioka & Lena Raine
+[API] Parsed artist: id=2NxI9cGlctxvCndRaZ08Ql, name=Abtmelody
+[API] Parsed artist: id=4L2TstryC20xcT2LbijHM5, name=Adam Burgess
+[API] Parsed artist: id=6C2XzsL5qwhzf3G6NhbI3U, name=Aero Chord
+[API] Parsed artist: id=74lqiZV1FdlT4IC1SpzjVc, name=Against the Current
+[API] Parsed artist: id=3PNQNRCdDBRVkiFFcW4dpG, name=AJR
+[API] Parsed artist: id=2R8lsoAdlWxaeJjivX5aIK, name=Alan Walker & Alex Skrindo
+[API] Parsed artist: id=3II4fMGQ2Mt5i97g1rY1hr, name=Alex Leavon & Jonny Rose
+[API] Parsed artist: id=0AmQKpWmCoYjr6wnv39nAB, name=Alstroemeria Records
+[API] Parsed artist: id=2u13hiG4CjID5LQZARemDz, name=American Authors
+[API] Parsed artist: id=1eD88W1UzdxTOMY3NIrm32, name=Anamanaguchi
+[API] Parsed artist: id=71CU3hOrf5dCIY46V5eghJ, name=Anikdote
+[API] Parsed artist: id=6jt4lIigC4Zy7bz9dtuJbQ, name=Anything_F_744
+[API] Parsed artist: id=2eHuKeSdJueCbEZ10wz51V, name=Ariana Grande
+[API] Parsed artist: id=5p8aA8ZqtAw0HLiNMV4tcW, name=Arthur Fiedler & Boston Pops Orchestra
+[API] Parsed artist: id=2OPouaE7yZPNcVTGP8K6ra, name=AsapSCIENCE
+[API] Parsed artist: id=5Z3dIxYSFsqEZsiudJBvHn, name=Avicii
+[API] Parsed artist: id=3m4lCPJXRMDrDSXUj3Xm7U, name=Bad Lip Reading
+[API] Parsed artist: id=4QLAPnxJmhcVMZmBsWs612, name=Benji.
+[API] Parsed artist: id=4Ctm8oMAJUCiFehQVxGDHY, name=Beverly Hills Cop
+[API] Parsed artist: id=62RVrmNODM3Hv6S54j3vuB, name=Billie Bust Up
+[API] Parsed artist: id=2cUlR50RVMP4dAUFB7ghi6, name=Billie Eilish
+[API] Parsed artist: id=3Qg2RzYIXnWMiiklrrZk5f, name=Black Gryph0n, Jayn & Dan Bull
+[API] Parsed artist: id=6iQnH12ARK8WnF0XFA5hVo, name=BLACKPINK
+[API] Parsed artist: id=3eiGgMceWi22vmtXIBJ1VF, name=Bobby Cole
+[API] Parsed artist: id=0wC2iScypkqUYMxdUqHqIx, name=Bomba Estéreo
+[API] Parsed artist: id=5ZOxePs1irUHyc5MF9XD2D, name=Brad Knauber
+[API] Parsed artist: id=0m1AF29B5Hz7R9iA8s3L9P, name=Brian Tyler
+[API] Parsed artist: id=1jcDD67odHx6MuUmSioLzJ, name=The Brig & MIDNIGHT CVLT
+[API] Parsed artist: id=1e1E3zsAgrQJHYFQQ9Zyes, name=Britney Spears
+[API] Parsed artist: id=6d6iF2ZwAljVVPNO0LDM0I, name=C418
+[API] Parsed artist: id=259opA1pv3FN3t7u4oMs7F, name=Calvin Harris
+[API] Parsed artist: id=37cGmrIV88UKJrnr1qpTf3, name=Caravan Palace
+[API] Parsed artist: id=3YRRGuiz5jd7jw4swWNrei, name=Casiopea
+[API] Parsed artist: id=4RD1Avt1lMwgK7VbepbonA, name=Catiso
+[API] Parsed artist: id=2rhiz61XLXvcYRIrWVkYTt, name=CG5
+[API] Parsed artist: id=2PvDxjpzphDjhmvOdYsksZ, name=The Chalkeaters
+[API] Parsed artist: id=7043KyYgkpgKga8AxzterW, name=The Chemical Brothers
+[API] Parsed artist: id=09p6Qly11o46dqe50n7id8, name=ChiliChill
+[API] Parsed artist: id=1qgn33wdKhh0oDw7uJ21o2, name=Chris Christodoulou
+[API] Parsed artist: id=0RLfeN6srDMYyOnp9CnLwy, name=Chris Linton
+[API] Parsed artist: id=4RJTuSkkKkQHqP2pxA4ctH, name=Clarx
+[API] Parsed artist: id=4EhUxV7KQItRi1cl77Ljtz, name=Clean Bandit
+[API] Parsed artist: id=3jNKy5fB1vQxr39XQn97jr, name=Daft Punk
+[API] Parsed artist: id=42d3KtQJ2VIrXdqR4V9igq, name=Dan Bull
+[API] Parsed artist: id=24Nxg54ITWaEOu5DnNLqpu, name=Danny Baranowsky
+[API] Parsed artist: id=7tjrAgncLv4pDkzL8qU2w2, name=Dead or Alive
+[API] Parsed artist: id=51urZ28FT86jamh7mOR5PJ, name=Debris & Jonth
+[API] Parsed artist: id=6lWLX60BDisZdByaX3ih8R, name=DECO*27
+[API] Parsed artist: id=1cCGH8FzunMOv3h8Y6kFU4, name=DECO*27 & PinocchioP
+[API] Parsed artist: id=28c8KEDHLHI8e6jy6TCyn6, name=Deep Purple
+[API] Parsed artist: id=4CNmlsnzvjeAOLOYhpQsT9, name=Derek Duke & Adam Burgess
+[API] Parsed artist: id=2bEQj8x5A9GuvfxVhc81gT, name=Dillon Francis
+[API] Parsed artist: id=7fWcUsZXi7MM8EzYuza8zC, name=Dirty Palm & Benix
+[API] Parsed artist: id=5SJmtbUBLmh0L4jCyl6xmv, name=DJ Snake
+[API] Parsed artist: id=5fw9JZqI6SYaxDgxEPUato, name=DNCE
+[API] Parsed artist: id=1ywbprGpT4z8Wwk2C8iBU2, name=Dominik Hauser & Hauser Studio Orchestra
+[API] Parsed artist: id=3XVZFsvG87khra1WsXBGdz, name=Dual Core
+[API] Parsed artist: id=1xocn9k9kQGMkN3JS258Z5, name=Duke & Jones & Louis Theroux
+[API] Parsed artist: id=5TliXJ7ZOlPqWSAMpqlJgF, name=DYSON
+[API] Parsed artist: id=4pFGjqXbLCgGyPkDB3c1w0, name=EARTHGANG
+[API] Parsed artist: id=7dB07x8Q2P9jPvGeDHxIFa, name=Ed Sheeran
+[API] Parsed artist: id=2VPtyAtBPGMAWEZeNB0dDG, name=EH!DE
+[API] Parsed artist: id=1GHeJ9hYYKr0QllVTKicx1, name=Eiffel 65
+[API] Parsed artist: id=0NLk6yz1zc9ntbyJaRn7x0, name=Elektronomia
+[API] Parsed artist: id=3jabhQlzUFThT4a17MwpRf, name=Ella Eyre
+[API] Parsed artist: id=3lqpXUJs079kOErJVNk8sb, name=Emdi
+[API] Parsed artist: id=6XNNZ2unNfO5jx1J4xYNBS, name=Eminem
+[API] Parsed artist: id=00gzqPiBtycBS3WjfGrrCq, name=Europe
+[API] Parsed artist: id=1b036GJ0LoLZC2A8zoEk7z, name=F‐777
+[API] Parsed artist: id=5q4ka7zLeWbZVfriqPAvHf, name=FalKKonE
+[API] Parsed artist: id=5BmSnJZriNrPWyH9Y4fpws, name=Fall Out Boy
+[API] Parsed artist: id=1YIlyLW6H02QohCVqiojzS, name=FLAVOR FOLEY
+[API] Parsed artist: id=5TMleXQcYkCdAMKLx4rhRx, name=Flo Rida
+[API] Parsed artist: id=6HucP0MujI1ANB3Xkuz9y5, name=FloFilz & Takuya Kuroda
+[API] Parsed artist: id=3RKkdevQT2vLF7caxRV3K0, name=Focus Fire
+[API] Parsed artist: id=461CyJJKfDHpuTetgByKJW, name=Forever Bound
+[API] Parsed artist: id=5Di7uL4fEP9vOnhvQuiSMC, name=Gameloft
+[API] Parsed artist: id=38dBs0fscqB45GRUt7KlJv, name=Geek Music
+[API] Parsed artist: id=0ifKlYTaoQTwWn8GpidUK9, name=Grandayy
+[API] Parsed artist: id=23ra3QrHR5xT9UCszYFGYs, name=grande1899
+[API] Parsed artist: id=5Ha2HhUfNlEVktJOugbcYm, name=The Greatest Bits
+[API] Parsed artist: id=5vnWcWUpiX2cUZrpGN5uuH, name=Gummibär
+[API] Parsed artist: id=5x8lqGble2NbRl5yr40RDV, name=Halfbrick
+[API] Parsed artist: id=3Z5hEYVDGy3cCIKOlUD4ai, name=Harold Faltermeyer
+[API] Parsed artist: id=1ddn7BqVYPqihO2TJzRSwt, name=Harry Callaghan
+[API] Parsed artist: id=55shrgkqPQns2BxSTTiEED, name=Hatsune Miku
+[API] Parsed artist: id=0wJZeNPf6Wm8Xh4uMJ1rCA, name=Heitor Pereira
+[API] Parsed artist: id=41TVAFaxNTdMaCfgwTVS5X, name=Hilight Tribe
+[API] Parsed artist: id=7JHsbaenDLcvL5iupypHfZ, name=HintShot
+[API] Parsed artist: id=2gpbhdP7tCCi66UARSd0Dx, name=Imagine Dragons
+[API] Parsed artist: id=4yfUUMYOi5PRBRagfeAX5Q, name=The Irish Descendants
+[API] Parsed artist: id=1X8OYAqLld5JtJePsx4gjJ, name=Jay Vincent & Michael Kramer
+[API] Parsed artist: id=2W4GSoAKpJRMQL6FyQxVrA, name=Jex
+[API] Parsed artist: id=2HUuXKPStNGwDvsbuD0YEW, name=Joe Hisaishi
+[API] Parsed artist: id=18evnQT2VSake5P7i3PeiM, name=Jonth
+[API] Parsed artist: id=68VoPFVpIK7wdpseaWFJH3, name=Jonth & Hilefex
+[API] Parsed artist: id=5EvcuKWSLQBRYdtvHKrYpm, name=Jordan Maron
+[API] Parsed artist: id=2yCI2LoTvv5s82AZua8xEi, name=Kahoot!
+[API] Parsed artist: id=02DiEqiNBn3idZvY8XP1lr, name=Kanye West
+[API] Parsed artist: id=7950Ur3ZQ9HXr3bhDaS2Ej, name=Karl Flodin & Erik Lyding
+[API] Parsed artist: id=63fG1azoGjAdBEH3mGZjsd, name=Kenta Nagata & Shinobu Tanaka
+[API] Parsed artist: id=6IilS6cLxsMe5BRVQe0LZX, name=Kevin MacLeod
+[API] Parsed artist: id=0eN01ganXwk3aOd1aVBoY5, name=The Kiffness
+[API] Parsed artist: id=0nxMYShaV0EtVZmQaPiYEa, name=Kirby’s Dream Band
+[API] Parsed artist: id=7nUNkbUSmjO1RZhC3la6sW, name=KRAKŇ
+[API] Parsed artist: id=5BRdTfdKBtiZsjPtIuC6qu, name=Krubb Wenkroist
+[API] Parsed artist: id=3BRKqMcMM0SC3fICvXYuBi, name=Laudividni
+[API] Parsed artist: id=5EV3XCscCfvWECp7xjiFte, name=Laura Brehm
+[API] Parsed artist: id=70YNK5coUe4su7UnIvkodG, name=Laura Shigihara
+[API] Parsed artist: id=6cl7SMdCe6gshPfFrWzQQ8, name=Lemaitre
+[API] Parsed artist: id=0cqjREqKt6mULEowBCaPcS, name=Lena Raine
+[API] Parsed artist: id=5lAp9JA4nvsVM7YOJCwt6M, name=Lena Raine & Kumi Tanioka
+[API] Parsed artist: id=2sIsG0akx1uaWeACuRXtKl, name=Lena Raine & Samuel Åberg
+[API] Parsed artist: id=0MHI7RFc6ylm6sTSTmV4Uo, name=Lensko
+[API] Parsed artist: id=2MKYfAUhSqWOJHnjbmWo4Q, name=LFZ
+[API] Parsed artist: id=5F9xJuxXD3Rf6rynJph6Vt, name=LilDeuceDeuce
+[API] Parsed artist: id=5jDIQ07P8V7UQ5BjFbK7mI, name=Lin‐Manuel Miranda & Germaine Franco
+[API] Parsed artist: id=1AyQYCSDovo8vp3W0sVfIR, name=The Living Tombstone
+[API] Parsed artist: id=2v3sGbwtvObQaCNogQYYIB, name=London Philharmonic Orchestra
+[API] Parsed artist: id=4zvQkCIsSTQ3NOrksWDiDQ, name=London Philharmonic Orchestra & David Parry
+[API] Parsed artist: id=5av2Q1ZWOxxqLRx3HTu0nc, name=Lorne Balfe
+[API] Parsed artist: id=4yAczWZSoGawrpjF5m27Gs, name=Lost Sky
+[API] Parsed artist: id=4fNzHPGWp9JjtjuLraa57C, name=lovelytheband
+[API] Parsed artist: id=6RgGkW23ja0foaq5hSyKcd, name=Macklemore & Ryan Lewis
+[API] Parsed artist: id=7gLwDzfI7i9lmPtvvx9MSg, name=Mark Mothersbaugh
+[API] Parsed artist: id=5junYidpUbb5Kbvalo8E32, name=Marshmello
+[API] Parsed artist: id=0WpHAS8jq8aaABtG6OHOU3, name=Martin Garrix
+[API] Parsed artist: id=48Lwx25F5cVYpTdzGmZPWq, name=Masafumi Ogata & Naofumi Hataya
+[API] Parsed artist: id=6ZWe8s2dL9yeA6l2FAao3q, name=Masked Wolf
+[API] Parsed artist: id=5fAIYxmiJTLLMtkXaRzTfh, name=The Matchroom Mob with Chas & Dave
+[API] Parsed artist: id=3of7ZKoCzDsdwxLRqQdjWT, name=Max Brhon
+[API] Parsed artist: id=7cOhkGTgJPz8BRZ3x4VDTr, name=MDK
+[API] Parsed artist: id=3bR0zjNmE8BZN1kbkRWAq6, name=Melo.Kids
+[API] Parsed artist: id=46kDG1KtjKy2jsxaMAdyex, name=MiatriSs
+[API] Parsed artist: id=2e7ITXeQIGP7POjgdV44f7, name=Michael Giacchino
+[API] Parsed artist: id=5PG1DqNnTcsMjWgGpiKB5p, name=Michael Jackson
+[API] Parsed artist: id=01IivneLc4qg4dAoSHKh6C, name=Midranger
+[API] Parsed artist: id=7u1pfmvyfEoXCeYFnuqMvw, name=Mike Morasky
+[API] Parsed artist: id=7lE4E8w98pTDMx3P1Qh9F1, name=MillerPlanet
+[API] Parsed artist: id=69fNCz4H6HIkf5ITRP38wa, name=Minecraft Mix
+[API] Parsed artist: id=32SDd7wTnDZmRctEEjEz1o, name=The Minions
+[API] Parsed artist: id=63Evlr1S1DaQhbmLEdqd92, name=Mykah
+[API] Parsed artist: id=5JT8f0ixretcVdl0omRyzr, name=Nathan Evans
+[API] Parsed artist: id=5dflVQyxUVfqdEyHYitBjo, name=Nathan Evans & The Kiffness
+[API] Parsed artist: id=6pRX9SF4RStkD6fDpCqwGD, name=Neal Acree, Sam Cardon, Derek Duke & Cris Velasco
+[API] Parsed artist: id=4NoKVdle2Pp7XEE82AVjvv, name=Neon X
+[API] Parsed artist: id=0CAZeC2ib56975IPkmoyoe, name=Nintendo
+[API] Parsed artist: id=0wWZsvPKYNxFcOkuXhoIjm, name=Nintendo Sound Team
+[API] Parsed artist: id=4gL5jV0U1FBMUcf4MxGJXL, name=NIVIRO
+[API] Parsed artist: id=5XmdydXiGoN0yuYboVUuy9, name=Noisestorm
+[API] Parsed artist: id=4z4xyzFGHTdHucjXdQ5E6L, name=The Northstar Singers
+[API] Parsed artist: id=4CLzbcgqPqWQcWXYqH0v2t, name=Olly Murs
+[API] Parsed artist: id=330bRlnfvHBMDYlTVBphoo, name=OneRepublic
+[API] Parsed artist: id=6zC8DNTlRedlHy0kWIIFv3, name=P!nk
+[API] Parsed artist: id=49ansoaslMtUVordv5gfl1, name=panpan
+[API] Parsed artist: id=5pmSQ9gLr9dUXviKOCaEpF, name=Parry Gripp
+[API] Parsed artist: id=0oKdKYmPFGQ2UrVqwGWBcv, name=Pentatonix
+[API] Parsed artist: id=1GEaQv5NOEFiX3aID6foAt, name=Pharrell Williams
+[API] Parsed artist: id=7HCKS4P0YK9g9VksbW34ra, name=Pharrell Williams & Heitor Pereira
+[API] Parsed artist: id=2DdILseYOdP9hG93XPCtK7, name=Pitbull
+[API] Parsed artist: id=75LCCQyQNleyH1YdBdipvv, name=Polybrow
+[API] Parsed artist: id=6qRsqjPKi2mtJdhya9aPzB, name=The Proclaimers
+[API] Parsed artist: id=0uYc4RhdX2sYkHtSlWZxxr, name=PsoGnar
+[API] Parsed artist: id=4jKZsUyRYlu8JAoNBCPBsX, name=PSY
+[API] Parsed artist: id=3Ip9OhiD4x1NDAKaSF7NQW, name=Queen
+[API] Parsed artist: id=253yvjggTHZxoc2fe1Jgpb, name=Qumu
+[API] Parsed artist: id=60HW8QD51diGcsjIyLI2ba, name=Radio Gosha × Disko Warp
+[API] Parsed artist: id=5R3PPtrR771ZJi65Ic3nlH, name=RAYE
+[API] Parsed artist: id=2GlNxA8QG4sZ3YfmaXdIKA, name=Re‐Logic
+[API] Parsed artist: id=6dH46usDzgYzsHXYx3JHPi, name=Rednex
+[API] Parsed artist: id=6hqLlU0loROAHfHj8mVgl5, name=RetroVision
+[API] Parsed artist: id=1sJg05O819zIWNcr1RblNw, name=Rihanna
+[API] Parsed artist: id=7b2kDDSZy614wqLEFP4hpn, name=Rob Gasser
+[API] Parsed artist: id=7iNEKu6cighkwCa2lxoQzx, name=Robin Hustin
+[API] Parsed artist: id=6f7fgjIYxBxdJo6FXKrTL5, name=Robin Hustin & Tobimorrow
+[API] Parsed artist: id=5ls2YuXLZ7FwUtgEsTz8jx, name=ROSÉ & Bruno Mars
+[API] Parsed artist: id=0N65GlV2RjVnaHHpkjx7UM, name=Ruelle
+[API] Parsed artist: id=0tVJHZd2UabKmWXfovyxHo, name=Sara Skinner
+[API] Parsed artist: id=56wpz9bn28ktVA5Q4KNra7, name=SAWTOWNE
+[API] Parsed artist: id=1fFbYKXN3OffZpcggCr9GV, name=The Score
+[API] Parsed artist: id=677A9AG9HYzjlWf62dzxeC, name=Scott Lloyd Shelly
+[API] Parsed artist: id=02GGZjRDxbPhufNKZAwNBe, name=Shawn Mendes
+[API] Parsed artist: id=27TwlB3iQLO0tkM2sMyET5, name=Sheet Music Boss
+[API] Parsed artist: id=7vkhrW06VEH24bxDOs2VMo, name=Shirobon
+[API] Parsed artist: id=5LLsEV6ub0wV5KEQBG7rC9, name=Skrillex
+[API] Parsed artist: id=7yn0IGxpWvM1aDUU3Psxhf, name=Slushii & Tokyo Machine
+[API] Parsed artist: id=5j2lXCsn7VNkqRufDLvXZk, name=Slushii x Tokyo Machine
+[API] Parsed artist: id=7uAv3lEnk5Jya4proBIC2C, name=Smokey Mountain
+[API] Parsed artist: id=6AIYvQrChO8dyAWlcnrVbk, name=Static & Ben El
+[API] Parsed artist: id=7t3ehiTX43BdAIHDbbzmt3, name=The Streets
+[API] Parsed artist: id=57cJvgDPLhmIrEr7ZItgou, name=The Stupendium
+[API] Parsed artist: id=2EjaUCPmswzl1DvMkLIJZK, name=Sub Urban
+[API] Parsed artist: id=5BS3ZXktEdWTdxuvLJGkLJ, name=T‐Pain & That Girl Lay Lay
+[API] Parsed artist: id=2Ecg2XNa4bbiYVRDyLv9pA, name=T.I.
+[API] Parsed artist: id=4qNcXeZOAUnmlPXVfNwWj8, name=TAK
+[API] Parsed artist: id=5OoNFGG2FBZcM62bdTJ6zH, name=Takuya Kuroda
+[API] Parsed artist: id=0Ajxuqmp47XqxCSco9jQoz, name=Taylor Swift
+[API] Parsed artist: id=0AE4dlt2jkMK0mCAx3y9vS, name=Tee Lopes
+[API] Parsed artist: id=5c8Yhy9fXPit3Iz7NGApMf, name=Teminite
+[API] Parsed artist: id=1boM7CGTdPpgqKjAR2bVYE, name=Teminite x Boom Kitty x Waterflame
+[API] Parsed artist: id=3a5CKfn7wtDCQzWpkXLa5K, name=TeraBrite
+[API] Parsed artist: id=2m9ZUyH4MMs5BWXAwqShvY, name=TheFatRat
+[API] Parsed artist: id=2fhUjREFdJEOILp4ydb3xu, name=TheFatRat & AleXa
+[API] Parsed artist: id=3NURbwkLzNbsB5ncljy0Ez, name=TheFatRat & Anjulie
+[API] Parsed artist: id=5HeY6yR4HMjRFqZEwt1oEj, name=TheFatRat & Cecilia Gault
+[API] Parsed artist: id=13ftVjMphN4cPaWpC64NoZ, name=TheFatRat & Laura Brehm
+[API] Parsed artist: id=7BXrJ18ekQ5UJ4xD2orEJJ, name=TheFatRat & Maisy Kay
+[API] Parsed artist: id=70tbwP88lytvdz5PyrOOYa, name=TheFatRat & Shiah Maisel
+[API] Parsed artist: id=587LUoTFsBWXFbsb6Z80U9, name=TheRealSullyG
+[API] Parsed artist: id=3FtBvEzrXWJqkD98GbsKtH, name=Tiësto
+[API] Parsed artist: id=21WmPB5e0SJQRpByIiq1RR, name=Tobuscus
+[API] Parsed artist: id=7AKugaq2QyxRmg8l50R0ag, name=Toby Fox
+[API] Parsed artist: id=4eRUwtFkB1T23gSHIzTARc, name=Toby Turner
+[API] Parsed artist: id=1getP3s4rU95sKgJoiWqSX, name=Tokyo Machine
+[API] Parsed artist: id=3CYOZH2X9BlIafCYJFBmoF, name=Tokyo Machine & CHOMPO
+[API] Parsed artist: id=3qN2yDxz9BsLnq2NjBU54d, name=TomSka & BlackGryph0n
+[API] Parsed artist: id=6xXcw54k900jUQSJEU009f, name=TomSka & The Gregory Brothers
+[API] Parsed artist: id=6y3leAgbfMWmJ081hKTPPn, name=TryHardNinja
+[API] Parsed artist: id=0c0Sh9hAEF7ua0mYHkOXgB, name=Uplink & Sweet Harmony
+[API] Parsed artist: id=7sUK5GfuLuEejmJTTVEPu0, name=Valve Studio Orchestra
+[API] Parsed artist: id=63sqASlAfjbGMuLP4JhnZU, name=Various Artists
+[API] Parsed artist: id=4rPUwyaqZsDHCagDaHoCVF, name=VGR
+[API] Parsed artist: id=09fkqw56ldVDOKtAlxHzLP, name=W&W
+[API] Parsed artist: id=1bGa31B7wrxW6T8D5QZ2Io, name=Walk off the Earth
+[API] Parsed artist: id=0kEaMHKkyMCRm6KiveHBpi, name=Walt Disney Records
+[API] Parsed artist: id=6LDt5i37i0dbtoz1OYJBjq, name=Warriyo
+[API] Parsed artist: id=1xSIw7IZ1wQcufanMQzFe3, name=Waterflame
+[API] Parsed artist: id=70JAIqMvlUm9oJs1rtikOt, name=Wintergatan
+[API] Parsed artist: id=7AupcU1Hh1Mqiz2k3u3n80, name=Yvar
+[API] Parsed artist: id=4n6PWRH7prp9U2yY85DnsV, name=Zayde Wølf
+[API] Parsed artist: id=6CWdUxcu26KWyceDTdDPBE, name=Zedd & Jasmine Thompson
+[API] api_get_artists loaded 242 artists
+[API] Buffer freed: capacity=151880, length=114541
+Artists loaded: 242
+Artist[0]: '"Weird Al" Yankovic' bytes: 22 57 65 69 72 64 20 41 6C 22 20 59 
+Artist[1]: '3rd Prototype' bytes: 33 72 64 20 50 72 6F 74 6F 74 79 70 
+Artist[2]: '3rd Prototype & Emdi' bytes: 33 72 64 20 50 72 6F 74 6F 74 79 70 
+Artist[3]: '8-Bit Misfits' bytes: 38 2D 42 69 74 20 4D 69 73 66 69 74 
+Artist[4]: 'おやすみ世界01 & Hatsune Miku' bytes: E3 81 8A E3 82 84 E3 81 99 E3 81 BF 
 Showing connecting screen...
 [DBG] About to C3D_FrameBegin
 [DBG] After C3D_FrameBegin
@@ -56,3 +618,378 @@ Showing connecting screen...
 [DBG] About to C2D_TargetClear bottom
 [DBG] After C2D_TargetClear bottom
 [DBG] About to ui_draw
+[DBG] After ui_draw
+[DBG] About to C3D_FrameEnd
+[AFTER] C3D_FrameEnd connecting screen
+Pinging server...
+[API] api_ping called
+[API] Built URL for endpoint 'ping': http://192.168.1.50:4533/rest/ping?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml
+[API] Ping URL: http://192.168.1.50:4533/rest/ping?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml
+[API] Buffer allocated: capacity=4096
+[API] Ping buf.data=0x82ecac0 buf.len=0
+[API] http_get called: url=http://192.168.1.50:4533/rest/ping?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml
+[API] Performing curl_easy_perform...
+[API] HTTP response code: 200
+[API] http_get finished: url=http://192.168.1.50:4533/rest/ping?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml, code=200
+[API] Ping HTTP code: 200
+[API] Ping buf.data=0x82ecac0 buf.len=175
+[API] Ping body hex (175 bytes): 3C 73 75 62 73 6F 6E 69 63 2D 72 65 73 70 6F 6E 73 65 20 78 6D 6C 6E 73 3D 22 68 74 74 70 3A 2F 2F 73 75 62 73 6F 6E 69 63 2E 6F 72 67 2F 72 65 73 74 61 70 69 22 20 73 74 61 74 75 73 3D 22 6F 6B 22 20 76 65 72 73 69 6F 6
+[API] Ping body text: <subsonic-response xmlns="http://subsonic.org/restapi" status="ok" version="1.16.1" type="navidrome" serverVersion="0.60.3 (34c6f12a)" openSubsonic="true"></subsonic-response>
+[API] Ping strstr("status=\"ok\"") = 0x82ecaf7
+[API] Ping ok=1 code=200 data=0x82ecac0 len=175
+[API] Buffer freed: capacity=4096, length=175
+[API] api_ping returning 0
+Ping OK, loading artists...
+[API] api_get_artists called
+[API] Built URL for endpoint 'getArtists': http://192.168.1.50:4533/rest/getArtists?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml
+[API] getArtists URL: http://192.168.1.50:4533/rest/getArtists?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml
+[API] Buffer allocated: capacity=4096
+[API] http_get called: url=http://192.168.1.50:4533/rest/getArtists?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml
+[API] Performing curl_easy_perform...
+[API] HTTP response code: 200
+[API] http_get finished: url=http://192.168.1.50:4533/rest/getArtists?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml, code=200
+[API] getArtists HTTP code: 200
+[API] Parsed artist: id=32sf9bpds6aN0CgE0sc8gk, name="Weird Al" Yankovic
+[API] Parsed artist: id=1c6hNhIks5AAbzfPa0DVTT, name=3rd Prototype
+[API] Parsed artist: id=3jSlKS2GOYvZZT2vEXBixZ, name=3rd Prototype & Emdi
+[API] Parsed artist: id=6GQjkQId1rbvMcLZoyZbmO, name=8-Bit Misfits
+[API] Parsed artist: id=6QBzs5MKeYw7Ihdxd18UUp, name=おやすみ世界01 & Hatsune Miku
+[API] Parsed artist: id=0UAUbzqPsG3RSiIAimdEkC, name=さつき が てんこもり
+[API] Parsed artist: id=2WOuL8X0QCQkfpu6dfcNRk, name=ギガP
+[API] Parsed artist: id=5cubJMZ6cE38c1sjobnrkz, name=柊マグネタイト
+[API] Parsed artist: id=0YZ0dPghxYgcDGFMZm60eM, name=鬼蜘蛛卜狐ノ獅子ト
+[API] Parsed artist: id=6cqpZWnP0Tlqz8Ld7Jiy8V, name=Aaron Cherof
+[API] Parsed artist: id=4FbiK9tSOitwGDwoMUzJhG, name=Aaron Cherof, Kumi Tanioka & Lena Raine
+[API] Parsed artist: id=2NxI9cGlctxvCndRaZ08Ql, name=Abtmelody
+[API] Parsed artist: id=4L2TstryC20xcT2LbijHM5, name=Adam Burgess
+[API] Parsed artist: id=6C2XzsL5qwhzf3G6NhbI3U, name=Aero Chord
+[API] Parsed artist: id=74lqiZV1FdlT4IC1SpzjVc, name=Against the Current
+[API] Parsed artist: id=3PNQNRCdDBRVkiFFcW4dpG, name=AJR
+[API] Parsed artist: id=2R8lsoAdlWxaeJjivX5aIK, name=Alan Walker & Alex Skrindo
+[API] Parsed artist: id=3II4fMGQ2Mt5i97g1rY1hr, name=Alex Leavon & Jonny Rose
+[API] Parsed artist: id=0AmQKpWmCoYjr6wnv39nAB, name=Alstroemeria Records
+[API] Parsed artist: id=2u13hiG4CjID5LQZARemDz, name=American Authors
+[API] Parsed artist: id=1eD88W1UzdxTOMY3NIrm32, name=Anamanaguchi
+[API] Parsed artist: id=71CU3hOrf5dCIY46V5eghJ, name=Anikdote
+[API] Parsed artist: id=6jt4lIigC4Zy7bz9dtuJbQ, name=Anything_F_744
+[API] Parsed artist: id=2eHuKeSdJueCbEZ10wz51V, name=Ariana Grande
+[API] Parsed artist: id=5p8aA8ZqtAw0HLiNMV4tcW, name=Arthur Fiedler & Boston Pops Orchestra
+[API] Parsed artist: id=2OPouaE7yZPNcVTGP8K6ra, name=AsapSCIENCE
+[API] Parsed artist: id=5Z3dIxYSFsqEZsiudJBvHn, name=Avicii
+[API] Parsed artist: id=3m4lCPJXRMDrDSXUj3Xm7U, name=Bad Lip Reading
+[API] Parsed artist: id=4QLAPnxJmhcVMZmBsWs612, name=Benji.
+[API] Parsed artist: id=4Ctm8oMAJUCiFehQVxGDHY, name=Beverly Hills Cop
+[API] Parsed artist: id=62RVrmNODM3Hv6S54j3vuB, name=Billie Bust Up
+[API] Parsed artist: id=2cUlR50RVMP4dAUFB7ghi6, name=Billie Eilish
+[API] Parsed artist: id=3Qg2RzYIXnWMiiklrrZk5f, name=Black Gryph0n, Jayn & Dan Bull
+[API] Parsed artist: id=6iQnH12ARK8WnF0XFA5hVo, name=BLACKPINK
+[API] Parsed artist: id=3eiGgMceWi22vmtXIBJ1VF, name=Bobby Cole
+[API] Parsed artist: id=0wC2iScypkqUYMxdUqHqIx, name=Bomba Estéreo
+[API] Parsed artist: id=5ZOxePs1irUHyc5MF9XD2D, name=Brad Knauber
+[API] Parsed artist: id=0m1AF29B5Hz7R9iA8s3L9P, name=Brian Tyler
+[API] Parsed artist: id=1jcDD67odHx6MuUmSioLzJ, name=The Brig & MIDNIGHT CVLT
+[API] Parsed artist: id=1e1E3zsAgrQJHYFQQ9Zyes, name=Britney Spears
+[API] Parsed artist: id=6d6iF2ZwAljVVPNO0LDM0I, name=C418
+[API] Parsed artist: id=259opA1pv3FN3t7u4oMs7F, name=Calvin Harris
+[API] Parsed artist: id=37cGmrIV88UKJrnr1qpTf3, name=Caravan Palace
+[API] Parsed artist: id=3YRRGuiz5jd7jw4swWNrei, name=Casiopea
+[API] Parsed artist: id=4RD1Avt1lMwgK7VbepbonA, name=Catiso
+[API] Parsed artist: id=2rhiz61XLXvcYRIrWVkYTt, name=CG5
+[API] Parsed artist: id=2PvDxjpzphDjhmvOdYsksZ, name=The Chalkeaters
+[API] Parsed artist: id=7043KyYgkpgKga8AxzterW, name=The Chemical Brothers
+[API] Parsed artist: id=09p6Qly11o46dqe50n7id8, name=ChiliChill
+[API] Parsed artist: id=1qgn33wdKhh0oDw7uJ21o2, name=Chris Christodoulou
+[API] Parsed artist: id=0RLfeN6srDMYyOnp9CnLwy, name=Chris Linton
+[API] Parsed artist: id=4RJTuSkkKkQHqP2pxA4ctH, name=Clarx
+[API] Parsed artist: id=4EhUxV7KQItRi1cl77Ljtz, name=Clean Bandit
+[API] Parsed artist: id=3jNKy5fB1vQxr39XQn97jr, name=Daft Punk
+[API] Parsed artist: id=42d3KtQJ2VIrXdqR4V9igq, name=Dan Bull
+[API] Parsed artist: id=24Nxg54ITWaEOu5DnNLqpu, name=Danny Baranowsky
+[API] Parsed artist: id=7tjrAgncLv4pDkzL8qU2w2, name=Dead or Alive
+[API] Parsed artist: id=51urZ28FT86jamh7mOR5PJ, name=Debris & Jonth
+[API] Parsed artist: id=6lWLX60BDisZdByaX3ih8R, name=DECO*27
+[API] Parsed artist: id=1cCGH8FzunMOv3h8Y6kFU4, name=DECO*27 & PinocchioP
+[API] Parsed artist: id=28c8KEDHLHI8e6jy6TCyn6, name=Deep Purple
+[API] Parsed artist: id=4CNmlsnzvjeAOLOYhpQsT9, name=Derek Duke & Adam Burgess
+[API] Parsed artist: id=2bEQj8x5A9GuvfxVhc81gT, name=Dillon Francis
+[API] Parsed artist: id=7fWcUsZXi7MM8EzYuza8zC, name=Dirty Palm & Benix
+[API] Parsed artist: id=5SJmtbUBLmh0L4jCyl6xmv, name=DJ Snake
+[API] Parsed artist: id=5fw9JZqI6SYaxDgxEPUato, name=DNCE
+[API] Parsed artist: id=1ywbprGpT4z8Wwk2C8iBU2, name=Dominik Hauser & Hauser Studio Orchestra
+[API] Parsed artist: id=3XVZFsvG87khra1WsXBGdz, name=Dual Core
+[API] Parsed artist: id=1xocn9k9kQGMkN3JS258Z5, name=Duke & Jones & Louis Theroux
+[API] Parsed artist: id=5TliXJ7ZOlPqWSAMpqlJgF, name=DYSON
+[API] Parsed artist: id=4pFGjqXbLCgGyPkDB3c1w0, name=EARTHGANG
+[API] Parsed artist: id=7dB07x8Q2P9jPvGeDHxIFa, name=Ed Sheeran
+[API] Parsed artist: id=2VPtyAtBPGMAWEZeNB0dDG, name=EH!DE
+[API] Parsed artist: id=1GHeJ9hYYKr0QllVTKicx1, name=Eiffel 65
+[API] Parsed artist: id=0NLk6yz1zc9ntbyJaRn7x0, name=Elektronomia
+[API] Parsed artist: id=3jabhQlzUFThT4a17MwpRf, name=Ella Eyre
+[API] Parsed artist: id=3lqpXUJs079kOErJVNk8sb, name=Emdi
+[API] Parsed artist: id=6XNNZ2unNfO5jx1J4xYNBS, name=Eminem
+[API] Parsed artist: id=00gzqPiBtycBS3WjfGrrCq, name=Europe
+[API] Parsed artist: id=1b036GJ0LoLZC2A8zoEk7z, name=F‐777
+[API] Parsed artist: id=5q4ka7zLeWbZVfriqPAvHf, name=FalKKonE
+[API] Parsed artist: id=5BmSnJZriNrPWyH9Y4fpws, name=Fall Out Boy
+[API] Parsed artist: id=1YIlyLW6H02QohCVqiojzS, name=FLAVOR FOLEY
+[API] Parsed artist: id=5TMleXQcYkCdAMKLx4rhRx, name=Flo Rida
+[API] Parsed artist: id=6HucP0MujI1ANB3Xkuz9y5, name=FloFilz & Takuya Kuroda
+[API] Parsed artist: id=3RKkdevQT2vLF7caxRV3K0, name=Focus Fire
+[API] Parsed artist: id=461CyJJKfDHpuTetgByKJW, name=Forever Bound
+[API] Parsed artist: id=5Di7uL4fEP9vOnhvQuiSMC, name=Gameloft
+[API] Parsed artist: id=38dBs0fscqB45GRUt7KlJv, name=Geek Music
+[API] Parsed artist: id=0ifKlYTaoQTwWn8GpidUK9, name=Grandayy
+[API] Parsed artist: id=23ra3QrHR5xT9UCszYFGYs, name=grande1899
+[API] Parsed artist: id=5Ha2HhUfNlEVktJOugbcYm, name=The Greatest Bits
+[API] Parsed artist: id=5vnWcWUpiX2cUZrpGN5uuH, name=Gummibär
+[API] Parsed artist: id=5x8lqGble2NbRl5yr40RDV, name=Halfbrick
+[API] Parsed artist: id=3Z5hEYVDGy3cCIKOlUD4ai, name=Harold Faltermeyer
+[API] Parsed artist: id=1ddn7BqVYPqihO2TJzRSwt, name=Harry Callaghan
+[API] Parsed artist: id=55shrgkqPQns2BxSTTiEED, name=Hatsune Miku
+[API] Parsed artist: id=0wJZeNPf6Wm8Xh4uMJ1rCA, name=Heitor Pereira
+[API] Parsed artist: id=41TVAFaxNTdMaCfgwTVS5X, name=Hilight Tribe
+[API] Parsed artist: id=7JHsbaenDLcvL5iupypHfZ, name=HintShot
+[API] Parsed artist: id=2gpbhdP7tCCi66UARSd0Dx, name=Imagine Dragons
+[API] Parsed artist: id=4yfUUMYOi5PRBRagfeAX5Q, name=The Irish Descendants
+[API] Parsed artist: id=1X8OYAqLld5JtJePsx4gjJ, name=Jay Vincent & Michael Kramer
+[API] Parsed artist: id=2W4GSoAKpJRMQL6FyQxVrA, name=Jex
+[API] Parsed artist: id=2HUuXKPStNGwDvsbuD0YEW, name=Joe Hisaishi
+[API] Parsed artist: id=18evnQT2VSake5P7i3PeiM, name=Jonth
+[API] Parsed artist: id=68VoPFVpIK7wdpseaWFJH3, name=Jonth & Hilefex
+[API] Parsed artist: id=5EvcuKWSLQBRYdtvHKrYpm, name=Jordan Maron
+[API] Parsed artist: id=2yCI2LoTvv5s82AZua8xEi, name=Kahoot!
+[API] Parsed artist: id=02DiEqiNBn3idZvY8XP1lr, name=Kanye West
+[API] Parsed artist: id=7950Ur3ZQ9HXr3bhDaS2Ej, name=Karl Flodin & Erik Lyding
+[API] Parsed artist: id=63fG1azoGjAdBEH3mGZjsd, name=Kenta Nagata & Shinobu Tanaka
+[API] Parsed artist: id=6IilS6cLxsMe5BRVQe0LZX, name=Kevin MacLeod
+[API] Parsed artist: id=0eN01ganXwk3aOd1aVBoY5, name=The Kiffness
+[API] Parsed artist: id=0nxMYShaV0EtVZmQaPiYEa, name=Kirby’s Dream Band
+[API] Parsed artist: id=7nUNkbUSmjO1RZhC3la6sW, name=KRAKŇ
+[API] Parsed artist: id=5BRdTfdKBtiZsjPtIuC6qu, name=Krubb Wenkroist
+[API] Parsed artist: id=3BRKqMcMM0SC3fICvXYuBi, name=Laudividni
+[API] Parsed artist: id=5EV3XCscCfvWECp7xjiFte, name=Laura Brehm
+[API] Parsed artist: id=70YNK5coUe4su7UnIvkodG, name=Laura Shigihara
+[API] Parsed artist: id=6cl7SMdCe6gshPfFrWzQQ8, name=Lemaitre
+[API] Parsed artist: id=0cqjREqKt6mULEowBCaPcS, name=Lena Raine
+[API] Parsed artist: id=5lAp9JA4nvsVM7YOJCwt6M, name=Lena Raine & Kumi Tanioka
+[API] Parsed artist: id=2sIsG0akx1uaWeACuRXtKl, name=Lena Raine & Samuel Åberg
+[API] Parsed artist: id=0MHI7RFc6ylm6sTSTmV4Uo, name=Lensko
+[API] Parsed artist: id=2MKYfAUhSqWOJHnjbmWo4Q, name=LFZ
+[API] Parsed artist: id=5F9xJuxXD3Rf6rynJph6Vt, name=LilDeuceDeuce
+[API] Parsed artist: id=5jDIQ07P8V7UQ5BjFbK7mI, name=Lin‐Manuel Miranda & Germaine Franco
+[API] Parsed artist: id=1AyQYCSDovo8vp3W0sVfIR, name=The Living Tombstone
+[API] Parsed artist: id=2v3sGbwtvObQaCNogQYYIB, name=London Philharmonic Orchestra
+[API] Parsed artist: id=4zvQkCIsSTQ3NOrksWDiDQ, name=London Philharmonic Orchestra & David Parry
+[API] Parsed artist: id=5av2Q1ZWOxxqLRx3HTu0nc, name=Lorne Balfe
+[API] Parsed artist: id=4yAczWZSoGawrpjF5m27Gs, name=Lost Sky
+[API] Parsed artist: id=4fNzHPGWp9JjtjuLraa57C, name=lovelytheband
+[API] Parsed artist: id=6RgGkW23ja0foaq5hSyKcd, name=Macklemore & Ryan Lewis
+[API] Parsed artist: id=7gLwDzfI7i9lmPtvvx9MSg, name=Mark Mothersbaugh
+[API] Parsed artist: id=5junYidpUbb5Kbvalo8E32, name=Marshmello
+[API] Parsed artist: id=0WpHAS8jq8aaABtG6OHOU3, name=Martin Garrix
+[API] Parsed artist: id=48Lwx25F5cVYpTdzGmZPWq, name=Masafumi Ogata & Naofumi Hataya
+[API] Parsed artist: id=6ZWe8s2dL9yeA6l2FAao3q, name=Masked Wolf
+[API] Parsed artist: id=5fAIYxmiJTLLMtkXaRzTfh, name=The Matchroom Mob with Chas & Dave
+[API] Parsed artist: id=3of7ZKoCzDsdwxLRqQdjWT, name=Max Brhon
+[API] Parsed artist: id=7cOhkGTgJPz8BRZ3x4VDTr, name=MDK
+[API] Parsed artist: id=3bR0zjNmE8BZN1kbkRWAq6, name=Melo.Kids
+[API] Parsed artist: id=46kDG1KtjKy2jsxaMAdyex, name=MiatriSs
+[API] Parsed artist: id=2e7ITXeQIGP7POjgdV44f7, name=Michael Giacchino
+[API] Parsed artist: id=5PG1DqNnTcsMjWgGpiKB5p, name=Michael Jackson
+[API] Parsed artist: id=01IivneLc4qg4dAoSHKh6C, name=Midranger
+[API] Parsed artist: id=7u1pfmvyfEoXCeYFnuqMvw, name=Mike Morasky
+[API] Parsed artist: id=7lE4E8w98pTDMx3P1Qh9F1, name=MillerPlanet
+[API] Parsed artist: id=69fNCz4H6HIkf5ITRP38wa, name=Minecraft Mix
+[API] Parsed artist: id=32SDd7wTnDZmRctEEjEz1o, name=The Minions
+[API] Parsed artist: id=63Evlr1S1DaQhbmLEdqd92, name=Mykah
+[API] Parsed artist: id=5JT8f0ixretcVdl0omRyzr, name=Nathan Evans
+[API] Parsed artist: id=5dflVQyxUVfqdEyHYitBjo, name=Nathan Evans & The Kiffness
+[API] Parsed artist: id=6pRX9SF4RStkD6fDpCqwGD, name=Neal Acree, Sam Cardon, Derek Duke & Cris Velasco
+[API] Parsed artist: id=4NoKVdle2Pp7XEE82AVjvv, name=Neon X
+[API] Parsed artist: id=0CAZeC2ib56975IPkmoyoe, name=Nintendo
+[API] Parsed artist: id=0wWZsvPKYNxFcOkuXhoIjm, name=Nintendo Sound Team
+[API] Parsed artist: id=4gL5jV0U1FBMUcf4MxGJXL, name=NIVIRO
+[API] Parsed artist: id=5XmdydXiGoN0yuYboVUuy9, name=Noisestorm
+[API] Parsed artist: id=4z4xyzFGHTdHucjXdQ5E6L, name=The Northstar Singers
+[API] Parsed artist: id=4CLzbcgqPqWQcWXYqH0v2t, name=Olly Murs
+[API] Parsed artist: id=330bRlnfvHBMDYlTVBphoo, name=OneRepublic
+[API] Parsed artist: id=6zC8DNTlRedlHy0kWIIFv3, name=P!nk
+[API] Parsed artist: id=49ansoaslMtUVordv5gfl1, name=panpan
+[API] Parsed artist: id=5pmSQ9gLr9dUXviKOCaEpF, name=Parry Gripp
+[API] Parsed artist: id=0oKdKYmPFGQ2UrVqwGWBcv, name=Pentatonix
+[API] Parsed artist: id=1GEaQv5NOEFiX3aID6foAt, name=Pharrell Williams
+[API] Parsed artist: id=7HCKS4P0YK9g9VksbW34ra, name=Pharrell Williams & Heitor Pereira
+[API] Parsed artist: id=2DdILseYOdP9hG93XPCtK7, name=Pitbull
+[API] Parsed artist: id=75LCCQyQNleyH1YdBdipvv, name=Polybrow
+[API] Parsed artist: id=6qRsqjPKi2mtJdhya9aPzB, name=The Proclaimers
+[API] Parsed artist: id=0uYc4RhdX2sYkHtSlWZxxr, name=PsoGnar
+[API] Parsed artist: id=4jKZsUyRYlu8JAoNBCPBsX, name=PSY
+[API] Parsed artist: id=3Ip9OhiD4x1NDAKaSF7NQW, name=Queen
+[API] Parsed artist: id=253yvjggTHZxoc2fe1Jgpb, name=Qumu
+[API] Parsed artist: id=60HW8QD51diGcsjIyLI2ba, name=Radio Gosha × Disko Warp
+[API] Parsed artist: id=5R3PPtrR771ZJi65Ic3nlH, name=RAYE
+[API] Parsed artist: id=2GlNxA8QG4sZ3YfmaXdIKA, name=Re‐Logic
+[API] Parsed artist: id=6dH46usDzgYzsHXYx3JHPi, name=Rednex
+[API] Parsed artist: id=6hqLlU0loROAHfHj8mVgl5, name=RetroVision
+[API] Parsed artist: id=1sJg05O819zIWNcr1RblNw, name=Rihanna
+[API] Parsed artist: id=7b2kDDSZy614wqLEFP4hpn, name=Rob Gasser
+[API] Parsed artist: id=7iNEKu6cighkwCa2lxoQzx, name=Robin Hustin
+[API] Parsed artist: id=6f7fgjIYxBxdJo6FXKrTL5, name=Robin Hustin & Tobimorrow
+[API] Parsed artist: id=5ls2YuXLZ7FwUtgEsTz8jx, name=ROSÉ & Bruno Mars
+[API] Parsed artist: id=0N65GlV2RjVnaHHpkjx7UM, name=Ruelle
+[API] Parsed artist: id=0tVJHZd2UabKmWXfovyxHo, name=Sara Skinner
+[API] Parsed artist: id=56wpz9bn28ktVA5Q4KNra7, name=SAWTOWNE
+[API] Parsed artist: id=1fFbYKXN3OffZpcggCr9GV, name=The Score
+[API] Parsed artist: id=677A9AG9HYzjlWf62dzxeC, name=Scott Lloyd Shelly
+[API] Parsed artist: id=02GGZjRDxbPhufNKZAwNBe, name=Shawn Mendes
+[API] Parsed artist: id=27TwlB3iQLO0tkM2sMyET5, name=Sheet Music Boss
+[API] Parsed artist: id=7vkhrW06VEH24bxDOs2VMo, name=Shirobon
+[API] Parsed artist: id=5LLsEV6ub0wV5KEQBG7rC9, name=Skrillex
+[API] Parsed artist: id=7yn0IGxpWvM1aDUU3Psxhf, name=Slushii & Tokyo Machine
+[API] Parsed artist: id=5j2lXCsn7VNkqRufDLvXZk, name=Slushii x Tokyo Machine
+[API] Parsed artist: id=7uAv3lEnk5Jya4proBIC2C, name=Smokey Mountain
+[API] Parsed artist: id=6AIYvQrChO8dyAWlcnrVbk, name=Static & Ben El
+[API] Parsed artist: id=7t3ehiTX43BdAIHDbbzmt3, name=The Streets
+[API] Parsed artist: id=57cJvgDPLhmIrEr7ZItgou, name=The Stupendium
+[API] Parsed artist: id=2EjaUCPmswzl1DvMkLIJZK, name=Sub Urban
+[API] Parsed artist: id=5BS3ZXktEdWTdxuvLJGkLJ, name=T‐Pain & That Girl Lay Lay
+[API] Parsed artist: id=2Ecg2XNa4bbiYVRDyLv9pA, name=T.I.
+[API] Parsed artist: id=4qNcXeZOAUnmlPXVfNwWj8, name=TAK
+[API] Parsed artist: id=5OoNFGG2FBZcM62bdTJ6zH, name=Takuya Kuroda
+[API] Parsed artist: id=0Ajxuqmp47XqxCSco9jQoz, name=Taylor Swift
+[API] Parsed artist: id=0AE4dlt2jkMK0mCAx3y9vS, name=Tee Lopes
+[API] Parsed artist: id=5c8Yhy9fXPit3Iz7NGApMf, name=Teminite
+[API] Parsed artist: id=1boM7CGTdPpgqKjAR2bVYE, name=Teminite x Boom Kitty x Waterflame
+[API] Parsed artist: id=3a5CKfn7wtDCQzWpkXLa5K, name=TeraBrite
+[API] Parsed artist: id=2m9ZUyH4MMs5BWXAwqShvY, name=TheFatRat
+[API] Parsed artist: id=2fhUjREFdJEOILp4ydb3xu, name=TheFatRat & AleXa
+[API] Parsed artist: id=3NURbwkLzNbsB5ncljy0Ez, name=TheFatRat & Anjulie
+[API] Parsed artist: id=5HeY6yR4HMjRFqZEwt1oEj, name=TheFatRat & Cecilia Gault
+[API] Parsed artist: id=13ftVjMphN4cPaWpC64NoZ, name=TheFatRat & Laura Brehm
+[API] Parsed artist: id=7BXrJ18ekQ5UJ4xD2orEJJ, name=TheFatRat & Maisy Kay
+[API] Parsed artist: id=70tbwP88lytvdz5PyrOOYa, name=TheFatRat & Shiah Maisel
+[API] Parsed artist: id=587LUoTFsBWXFbsb6Z80U9, name=TheRealSullyG
+[API] Parsed artist: id=3FtBvEzrXWJqkD98GbsKtH, name=Tiësto
+[API] Parsed artist: id=21WmPB5e0SJQRpByIiq1RR, name=Tobuscus
+[API] Parsed artist: id=7AKugaq2QyxRmg8l50R0ag, name=Toby Fox
+[API] Parsed artist: id=4eRUwtFkB1T23gSHIzTARc, name=Toby Turner
+[API] Parsed artist: id=1getP3s4rU95sKgJoiWqSX, name=Tokyo Machine
+[API] Parsed artist: id=3CYOZH2X9BlIafCYJFBmoF, name=Tokyo Machine & CHOMPO
+[API] Parsed artist: id=3qN2yDxz9BsLnq2NjBU54d, name=TomSka & BlackGryph0n
+[API] Parsed artist: id=6xXcw54k900jUQSJEU009f, name=TomSka & The Gregory Brothers
+[API] Parsed artist: id=6y3leAgbfMWmJ081hKTPPn, name=TryHardNinja
+[API] Parsed artist: id=0c0Sh9hAEF7ua0mYHkOXgB, name=Uplink & Sweet Harmony
+[API] Parsed artist: id=7sUK5GfuLuEejmJTTVEPu0, name=Valve Studio Orchestra
+[API] Parsed artist: id=63sqASlAfjbGMuLP4JhnZU, name=Various Artists
+[API] Parsed artist: id=4rPUwyaqZsDHCagDaHoCVF, name=VGR
+[API] Parsed artist: id=09fkqw56ldVDOKtAlxHzLP, name=W&W
+[API] Parsed artist: id=1bGa31B7wrxW6T8D5QZ2Io, name=Walk off the Earth
+[API] Parsed artist: id=0kEaMHKkyMCRm6KiveHBpi, name=Walt Disney Records
+[API] Parsed artist: id=6LDt5i37i0dbtoz1OYJBjq, name=Warriyo
+[API] Parsed artist: id=1xSIw7IZ1wQcufanMQzFe3, name=Waterflame
+[API] Parsed artist: id=70JAIqMvlUm9oJs1rtikOt, name=Wintergatan
+[API] Parsed artist: id=7AupcU1Hh1Mqiz2k3u3n80, name=Yvar
+[API] Parsed artist: id=4n6PWRH7prp9U2yY85DnsV, name=Zayde Wølf
+[API] Parsed artist: id=6CWdUxcu26KWyceDTdDPBE, name=Zedd & Jasmine Thompson
+[API] api_get_artists loaded 242 artists
+[API] Buffer freed: capacity=192680, length=114541
+Artists loaded: 242
+Artist[0]: '"Weird Al" Yankovic' bytes: 22 57 65 69 72 64 20 41 6C 22 20 59 
+Artist[1]: '3rd Prototype' bytes: 33 72 64 20 50 72 6F 74 6F 74 79 70 
+Artist[2]: '3rd Prototype & Emdi' bytes: 33 72 64 20 50 72 6F 74 6F 74 79 70 
+Artist[3]: '8-Bit Misfits' bytes: 38 2D 42 69 74 20 4D 69 73 66 69 74 
+Artist[4]: 'おやすみ世界01 & Hatsune Miku' bytes: E3 81 8A E3 82 84 E3 81 99 E3 81 BF 
+Entering main loop...
+APT hook registered
+[UI] A button pressed
+[UI] Transitioning to ALBUMS screen
+Action detected, screen=1
+Loading albums for artist: 32sf9bpds6aN0CgE0sc8gk
+[API] api_get_albums called for artist_id=32sf9bpds6aN0CgE0sc8gk
+[API] Built URL for endpoint 'getArtist': http://192.168.1.50:4533/rest/getArtist?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml&id=32sf9bpds6aN0CgE0sc8gk
+[API] Buffer allocated: capacity=4096
+[API] http_get called: url=http://192.168.1.50:4533/rest/getArtist?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml&id=32sf9bpds6aN0CgE0sc8gk
+[API] Performing curl_easy_perform...
+[API] HTTP response code: 200
+[API] http_get finished: url=http://192.168.1.50:4533/rest/getArtist?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml&id=32sf9bpds6aN0CgE0sc8gk, code=200
+[API] Parsing album data for artist_id=32sf9bpds6aN0CgE0sc8gk
+[API] Parsed album: id=4ks4Nhn0ATLVpyjshYh19X, name=Straight Outta Lynwood, artist="Weird Al" Yankovic, year=2006, songCount=1
+[API] api_get_albums loaded 1 albums for artist_id=32sf9bpds6aN0CgE0sc8gk
+[API] Buffer freed: capacity=4096, length=1159
+Albums loaded for artist: 32sf9bpds6aN0CgE0sc8gk
+[UI] A button pressed
+[UI] Transitioning to TRACKS screen
+Action detected, screen=2
+Navigating to tracks screen, stopping audio
+Loading tracks for album: 4ks4Nhn0ATLVpyjshYh19X
+[API] api_get_tracks called for album_id=4ks4Nhn0ATLVpyjshYh19X
+[API] Built URL for endpoint 'getAlbum': http://192.168.1.50:4533/rest/getAlbum?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml&id=4ks4Nhn0ATLVpyjshYh19X
+[API] Buffer allocated: capacity=4096
+[API] http_get called: url=http://192.168.1.50:4533/rest/getAlbum?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml&id=4ks4Nhn0ATLVpyjshYh19X
+[API] Performing curl_easy_perform...
+[API] HTTP response code: 200
+[API] http_get finished: url=http://192.168.1.50:4533/rest/getAlbum?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml&id=4ks4Nhn0ATLVpyjshYh19X, code=200
+[API] Parsing track data for album_id=4ks4Nhn0ATLVpyjshYh19X
+[API] Parsed track: id=PgAFuYydRzbrQVcj6rkQNt, title=White & Nerdy (Parody of "Ridin'" by Chamillionaire feat. Krayz, artist="Weird Al" Yankovic, album=Straight Outta Lynwood, duration=170, track=1
+[API] api_get_tracks loaded 1 tracks for album_id=4ks4Nhn0ATLVpyjshYh19X
+[API] Buffer freed: capacity=4096, length=1979
+Tracks loaded for album: 4ks4Nhn0ATLVpyjshYh19X
+[API] Fetching album cover: http://192.168.1.50:4533/rest/getCoverArt?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&id=4ks4Nhn0ATLVpyjshYh19X
+[API] Buffer allocated: capacity=4096
+[API] http_get called: url=http://192.168.1.50:4533/rest/getCoverArt?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&id=4ks4Nhn0ATLVpyjshYh19X
+[API] Performing curl_easy_perform...
+[API] HTTP response code: 200
+[API] http_get finished: url=http://192.168.1.50:4533/rest/getCoverArt?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&id=4ks4Nhn0ATLVpyjshYh19X, code=200
+[API] Buffer freed: capacity=1065592, length=603696
+[API] Decoded cover: 1200x1200 (3 channels)
+[API] Downscaled cover to: 1024x1024
+[API] Successfully loaded album cover: 1024x1024 (POT: 1024x1024)
+[UI] Album cover loaded for album: 4ks4Nhn0ATLVpyjshYh19X
+[UI] A button pressed
+[UI] Transitioning to PLAYER screen
+Action detected, screen=3
+Navigating to player screen
+[API] api_stream_url called for track_id=PgAFuYydRzbrQVcj6rkQNt
+[API] Built URL for endpoint 'stream': http://192.168.1.50:4533/rest/stream?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml&id=PgAFuYydRzbrQVcj6rkQNt&format=mp3&maxBitRate=128
+[API] Generated stream URL: http://192.168.1.50:4533/rest/stream?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml&id=PgAFuYydRzbrQVcj6rkQNt&format=mp3&maxBitRate=128
+Playing: http://192.168.1.50:4533/rest/stream?u=wolfwolfnuke&p=apple95&v=1.16.1&c=Navidrome3DS&f=xml&id=PgAFuYydRzbrQVcj6rkQNt&format=mp3&maxBitRate=128
+audio_available: 1
+mem free: 91788 KB
+linear free: 21076 KB
+[AUDIO] plant_stack_canary called
+[AUDIO] Stack canary planted
+audio: stack alloc OK at 0x82ecac0 (1024 KB)
+audio: thread OK
+audio_play_url rc: 0
+Playback started OK
+audio: thread started, stack size 1024 KB
+audio: HTTP 200
+audio: httpcDownloadData error 0xD8A0A016 after 2732430 bytes
+audio: downloaded 2732430 bytes
+audio: 48000Hz 2ch
+audio: free heap at decode start: 91784 KB
+Main loop exited, starting cleanup...
+Shutting down
+Stopping audio and cleaning up audio subsystem
+audio_stop: start
+audio: playback loop ended (stop=1 frames=1191)
+audio: thread exit
+[AUDIO] check_stack_canary called
+audio: stack canary OK (bottom 16 words intact, ~1024 KB margin)
+[AUDIO] check_stack_canary complete
+audio_stop: done
+[ENTER] audio_cleanup()
+Cleaning up API...
+[API] Cleaning up curl global state
+[API] Cleanup complete
+Cleaning up UI...
+[UI] ui_cleanup called
+[UI] Clearing text cache
+[UI] fonts_cleanup called
+[UI] Freed font 0
+[UI] fonts_cleanup complete, all fonts freed
+[UI] Freeing album cover texture
+[UI] Deleting text buffer
+[UI] ui_cleanup complete
+Freeing UI state...
+Cleaning up debug log...

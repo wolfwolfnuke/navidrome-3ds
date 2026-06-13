@@ -1,0 +1,95 @@
+# Navidrome 3DS: Master Optimisation Roadmap
+
+This document provides a comprehensive analysis of performance bottlenecks and proposed architectural improvements for the Navidrome 3DS client.
+
+---
+
+## 1. UI Subsystem (Highest Priority)
+The UI is the most immediate bottleneck, with significant CPU waste in the rendering pipeline.
+
+### 1.1 Text Rendering Pipeline (Critical)
+**Problem**: `draw_text` performs UTF-8 decoding and font searching for every character, every frame, for every string—*even if the string is already in the cache*. The cache only optimizes the final `citro2d` optimization step.
+**Solution**: 
+- **Shift the Cache Entry Point**: The cache lookup must happen at the *start* of `draw_text`.
+- **Redesign `CachedText`**: Store a list of "Render Segments" (font index, text, measured width) instead of just the final `C2D_Text` object.
+- **Optimized Flow**: `draw_text(str)` $\to$ Cache Lookup $\to$ (Hit: Render segments / Miss: Decode UTF-8 $\to$ Find Fonts $\to$ Store Segments $\to$ Render).
+
+### 1.2 Cache Management (Medium)
+**Problem**: LRU eviction uses $O(N)$ array shifting (`memmove`) on every cache miss.
+**Solution**: Implement a circular buffer or a timestamp-based eviction system.
+
+### 1.3 Rendering Redundancies (Low)
+**Problem**: 
+- Redundant `snprintf` calls in `draw_list` when copying names.
+- Rebuilding the `names` array from `UiState` every frame.
+- Redrawing static overlays (controls bar, header) every frame.
+**Solution**: 
+- Pass `const char*` directly to `draw_text`.
+- Rebuild `names` array only when the screen or list changes.
+
+---
+
+## 2. API Subsystem (High Priority)
+The API subsystem suffers from high latency and heap churn.
+
+### 2.1 Network Resource Management (Critical)
+**Problem**: `curl_easy_init` and `curl_easy_cleanup` are called per request, preventing TCP/TLS connection reuse (Keep-Alive).
+**Solution**: Move the `CURL *` handle to a static global; initialize in `api_init` and cleanup in `api_cleanup`.
+
+### 2.2 Memory & Buffer Management (High)
+**Problem**: 
+- Response buffers are allocated/freed every request.
+- Initial capacity is too small (4KB), causing "realloc storms" for large XML lists.
+**Solution**: Use a single static `Buffer` for all requests with an initial capacity of 64KB. Reset `len = 0` before each request.
+
+### 2.3 XML Parsing Efficiency (Medium)
+**Problem**: `xml_attr` rescans the same tag string from the start for every attribute sought.
+**Solution**: Update `xml_attr` to return the pointer *after* the match; use this as the starting point for the next attribute search.
+
+---
+
+## 3. Audio Subsystem (High Priority)
+The "download-then-play" model is the primary architectural limitation.
+
+### 3.1 True Streaming Architecture (Critical)
+**Problem**: Downloading the full song (up to 5MB) before playback causes startup latency and limits song length.
+**Solution**: 
+- Transition to **Pull-based Streaming** using `drmp3_init`.
+- Implement a `drmp3_read_proc` callback that calls `httpcDownloadData` in chunks.
+- Implement a small ring buffer (e.g., 128KB) to smooth out network jitter.
+
+### 3.2 Heap Churn (Medium)
+**Problem**: `httpcContext`, `dl_buf`, and `drmp3` are re-allocated on every song switch.
+**Solution**: Pre-allocate and reuse these structures.
+
+---
+
+## 4. Main Loop & General System (Medium Priority)
+
+### 4.1 Synchronous I/O Blocking (High)
+**Problem**: API calls are made on the main thread, freezing the entire UI (including the "Loading..." overlay) during network requests.
+**Solution**: Move API requests to a background worker thread or implement a non-blocking state machine using `curl_multi`.
+
+### 4.2 Main Loop Redundancies (Low)
+**Problem**: `aptSetSleepAllowed()` is called every frame regardless of state change.
+**Solution**: Call it only when `s_playing` changes.
+
+### 4.3 Debug Logging I/O (Low)
+**Problem**: `debug_log` uses `FS_WRITE_FLUSH`, forcing a hardware sync to the SD card on every line.
+**Solution**: Implement a log ring buffer and perform buffered writes, flushing only periodically or on critical errors.
+
+### 4.4 Config Parser Robustness (Low)
+**Problem**: Naive `sscanf` parsing fails on configuration values containing spaces.
+**Solution**: Implement a robust parser that trims whitespace and handles quoted strings.
+
+---
+
+## Summary of Expected Gains
+
+| Area | Optimisation | Expected Result |
+| :--- | :--- | :--- |
+| **UI** | Text System Redesign | FPS increase from single-digits to stable 60FPS during list scrolling. |
+| **API** | CURL Handle Reuse | $\approx 200\text{ms} \text{--} 500\text{ms}$ reduction in request latency. |
+| **Audio** | True Streaming | Instant playback start; support for songs $> 5\text{MB}$. |
+| **Main** | Async API Calls | Elimination of UI freezes during loading. |
+| **Debug** | Buffered Logging | Reduction in SD card wear and elimination of logging-induced stutters. |

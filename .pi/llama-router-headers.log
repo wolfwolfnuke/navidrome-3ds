@@ -986,3 +986,1090 @@
   "provider": "llama-server"
 }
 
+{
+  "timestamp": "2026-06-02T23:40:00.483Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:42:42.155Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:42:52.562Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:43:36.802Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:43:47.305Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:43:52.175Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:43:55.557Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:44:05.431Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:44:09.204Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:44:19.576Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:44:26.845Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:44:37.883Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:46:24.922Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:46:41.045Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:46:58.259Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:47:09.830Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:48:18.282Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:49:09.553Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:49:25.298Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:49:47.933Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:51:13.538Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:51:28.011Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:51:36.419Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:51:55.417Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:52:10.197Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:52:26.281Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:52:37.609Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:52:58.452Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:53:28.646Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:53:34.874Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:53:45.190Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:54:07.583Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:54:16.523Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-02T23:56:45.369Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:04:47.986Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:05:01.123Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:06:13.025Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:06:41.591Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:09:01.178Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:10:38.897Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:11:28.521Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:13:51.816Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:15:19.075Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:17:28.372Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:27:09.607Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:30:03.386Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:30:33.529Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:31:03.710Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:32:20.682Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:34:09.050Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:34:55.021Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:35:14.361Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:35:25.458Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:35:48.420Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:36:01.939Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:36:13.473Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:36:43.813Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:36:52.484Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:37:13.211Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:37:21.431Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T00:37:38.197Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server"
+}
+
+{
+  "timestamp": "2026-06-03T01:09:46.253Z",
+  "headers": {
+    "access-control-allow-origin": "*",
+    "access-control-expose-headers": "X-Generation-Id,cf-ray",
+    "cache-control": "no-cache",
+    "cf-ray": "a05ad030daccf3ea-SEA",
+    "connection": "keep-alive",
+    "content-type": "text/event-stream",
+    "date": "Wed, 03 Jun 2026 01:09:46 GMT",
+    "permissions-policy": "payment=(self \"https://checkout.stripe.com\" \"https://connect-js.stripe.com\" \"https://js.stripe.com\" \"https://*.js.stripe.com\" \"https://hooks.stripe.com\")",
+    "referrer-policy": "no-referrer, strict-origin-when-cross-origin",
+    "server": "cloudflare",
+    "transfer-encoding": "chunked",
+    "x-content-type-options": "nosniff",
+    "x-generation-id": "gen-1780448976-65poXcArmRpn1RpK82qF"
+  },
+  "model": "z-ai/glm-4.5-air:free",
+  "provider": "openrouter"
+}
+
+{
+  "timestamp": "2026-06-07T20:18:46.425Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-07T20:21:41.106Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-07T20:25:52.315Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-07T20:29:08.526Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:18:12.396Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:21:03.874Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:21:38.874Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:23:19.595Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:23:59.280Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:25:29.916Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:26:15.189Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:31:10.424Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:34:40.888Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:35:20.538Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:35:28.373Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:37:43.864Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:39:20.635Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:40:04.950Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:40:15.048Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:41:41.400Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
+{
+  "timestamp": "2026-06-11T23:44:22.532Z",
+  "headers": {
+    "access-control-allow-origin": "",
+    "content-type": "text/event-stream",
+    "keep-alive": "timeout=5, max=100",
+    "server": "llama.cpp",
+    "transfer-encoding": "chunked"
+  },
+  "model": "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf",
+  "provider": "llama-server=http://127.0.0.1:8080"
+}
+
