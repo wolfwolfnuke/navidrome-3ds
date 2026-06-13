@@ -3,8 +3,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <curl/curl.h>
 #include <citro2d.h>
+#include <citro3d.h>
+#include <3ds.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 // ---------------------------------------------------------------------------
 // Internal state
@@ -179,8 +185,119 @@ static const char *xml_next_tag(const char *xml, const char *tag) {
     return strstr(xml, tag);
 }
 
-// Function to fetch album cover image
-void *api_get_album_cover(const char *album_id) {
+// ---------------------------------------------------------------------------
+// Read 16-bit big-endian from buffer
+static u16 read_be16(const u8 *p) { return (u16)p[0] << 8 | p[1]; }
+static u32 read_be32(const u8 *p) { return (u32)p[0] << 24 | p[1] << 16 | p[2] << 8 | p[3]; }
+static u16 read_le16(const u8 *p) { return (u16)p[1] << 8 | p[0]; }
+static u32 read_le32(const u8 *p) { return (u32)p[3] << 24 | p[2] << 16 | p[1] << 8 | p[0]; }
+
+// Parse EXIF orientation from JPEG buffer. Returns 1-8, or 0 if not found/valid.
+static int parse_exif_orientation(const u8 *data, u32 size) {
+    for (u32 i = 0; i + 4 < size; i++) {
+        if (data[i] != 0xFF) continue;
+        u8 marker = data[i+1];
+        if (marker == 0xD9 || marker == 0xDA) break; // SOS / EOI
+        if (marker != 0xE1) {
+            if (marker == 0x00) continue;
+            u16 seg_len = read_be16(&data[i+2]);
+            i += seg_len;
+            continue;
+        }
+        // APP1 segment: FF E1 len "Exif\0\0" TIFF...
+        if (i + 14 > size) break;
+        u16 seg_len = read_be16(&data[i+2]);
+        if (seg_len < 14 || i + 2 + seg_len > size) break;
+        if (memcmp(&data[i+4], "Exif\0\0", 6) != 0) { i += seg_len; continue; }
+        u32 tiff_off = i + 10;
+        u32 tiff_end = i + 2 + seg_len;
+        if (tiff_off + 8 > tiff_end) break;
+        int little = (data[tiff_off] == 'I');
+        if (data[tiff_off+1] != (little ? 'I' : 'M')) break;
+        u16 magic = little ? read_le16(&data[tiff_off+2]) : read_be16(&data[tiff_off+2]);
+        if (magic != 0x002A) break;
+        u32 ifd0_off = little ? read_le32(&data[tiff_off+4]) : read_be32(&data[tiff_off+4]);
+        if (tiff_off + ifd0_off + 2 > tiff_end) break;
+        u32 pos = tiff_off + ifd0_off;
+        u16 count = little ? read_le16(&data[pos]) : read_be16(&data[pos]);
+        pos += 2;
+        for (u16 j = 0; j < count && pos + 12 <= tiff_end; j++, pos += 12) {
+            u16 tag = little ? read_le16(&data[pos]) : read_be16(&data[pos]);
+            if (tag == 0x0112) {
+                u16 type = little ? read_le16(&data[pos+2]) : read_be16(&data[pos+2]);
+                if (type != 3) break; // SHORT
+                u16 orient = little ? read_le16(&data[pos+8]) : read_be16(&data[pos+8]);
+                if (orient >= 1 && orient <= 8) return orient;
+            }
+        }
+        break;
+    }
+    return 0;
+}
+
+static void apply_orientation(unsigned char **pixels, int *w, int *h, int orient) {
+    if (orient <= 1) return;
+    int ow = *w, oh = *h;
+    unsigned char *src = *pixels;
+    // For 90/270 rotations, output dims are swapped
+    int nw = (orient >= 5 && orient <= 8) ? oh : ow;
+    int nh = (orient >= 5 && orient <= 8) ? ow : oh;
+    unsigned char *dst = (unsigned char*)malloc(nw * nh * 4);
+    if (!dst) return;
+    for (int y = 0; y < oh; y++) {
+        for (int x = 0; x < ow; x++) {
+            int sx, sy;
+            switch (orient) {
+                case 2: sx = ow - 1 - x; sy = y; break;
+                case 3: sx = ow - 1 - x; sy = oh - 1 - y; break;
+                case 4: sx = x; sy = oh - 1 - y; break;
+                case 5: sx = y; sy = x; break;
+                case 6: sx = oh - 1 - y; sy = x; break;
+                case 7: sx = oh - 1 - y; sy = ow - 1 - x; break;
+                case 8: sx = y; sy = ow - 1 - x; break;
+                default: sx = x; sy = y; break;
+            }
+            memcpy(&dst[sy * nw * 4 + sx * 4], &src[y * ow * 4 + x * 4], 4);
+        }
+    }
+    free(src);
+    *pixels = dst;
+    *w = nw;
+    *h = nh;
+}
+
+// 3DS texture swizzle: convert linear RGBA8 → tiled GPU format
+// ---------------------------------------------------------------------------
+// Z-order (Morton) interleave: compute in-tile offset for texel (px, py) in an 8x8 tile
+static int z_order(int px, int py) {
+    return ((px & 1) << 0) | ((py & 1) << 1) |
+           ((px & 2) << 1) | ((py & 2) << 2) |
+           ((px & 4) << 2) | ((py & 4) << 3);
+}
+
+// Convert RGBA8 to RGB565 and swizzle into GPU tiled format
+static void swizzle_rgb565(u16 *out, const u32 *in, int w, int h, int pot_w, int pot_h) {
+    int tiles_per_row = pot_w / 8;
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            u32 pixel = in[y * w + x];
+            u8 r = (pixel >> 0) & 0xFF;
+            u8 g = (pixel >> 8) & 0xFF;
+            u8 b = (pixel >> 16) & 0xFF;
+            u16 rgb565 = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
+            int tile_x = x / 8;
+            int tile_y = y / 8;
+            int tile_idx = tile_y * tiles_per_row + tile_x;
+            int dst = tile_idx * 64 + z_order(x % 8, y % 8);
+            out[dst] = rgb565;
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Fetch and decode album cover using stb_image, create a C2D_Image
+// ---------------------------------------------------------------------------
+int api_get_album_cover(const char *album_id, AlbumCoverResult *out) {
     char url[2048];
     snprintf(url, sizeof(url), "%s/rest/getCoverArt?u=%s&p=%s&v=1.16.1&c=Navidrome3DS&id=%s",
             g_base_url, g_cfg.username, g_cfg.password, album_id);
@@ -192,31 +309,104 @@ void *api_get_album_cover(const char *album_id) {
     if (http_code != 200 || !buf.data || buf.len == 0) {
         debug_log("[API] Failed to fetch album cover, HTTP code: %d", http_code);
         buf_free(&buf);
-        return NULL;
+        return -1;
     }
 
-    // Detect image format from the first few bytes
-    const char *format = "unknown";
-    if (buf.len >= 8) {
-        if (buf.data[0] == 0xFF && buf.data[1] == 0xD8) {
-            format = "JPEG";
-        } else if (buf.data[0] == 0x89 && buf.data[1] == 0x50 && buf.data[2] == 0x4E && buf.data[3] == 0x47) {
-            format = "PNG";
+    // Decode image to RGBA8 using stb_image
+    int w, h, channels;
+
+    // Parse EXIF orientation from raw JPEG before freeing buffer
+    int orient = parse_exif_orientation((u8*)buf.data, buf.len);
+
+    unsigned char *pixels = stbi_load_from_memory((unsigned char*)buf.data, buf.len, &w, &h, &channels, 4);
+    buf_free(&buf);
+
+    if (!pixels) {
+        debug_log("[API] stb_image failed to decode cover image");
+        return -1;
+    }
+    debug_log("[API] Decoded cover: %dx%d (%d channels)", w, h, channels);
+
+    // Apply EXIF orientation transform if needed
+    if (orient > 1) {
+        debug_log("[API] Applying EXIF orientation: %d", orient);
+        apply_orientation(&pixels, &w, &h, orient);
+        debug_log("[API] After orientation: %dx%d", w, h);
+    }
+
+    // 3DS PICA200 GPU max texture size is 1024. Downscale if needed.
+    int max_tex = 1024;
+    if (w > max_tex || h > max_tex) {
+        float scale = (w > h) ? (float)max_tex / w : (float)max_tex / h;
+        int nw = (int)(w * scale);
+        int nh = (int)(h * scale);
+        unsigned char *resized = (unsigned char*)malloc(nw * nh * 4);
+        if (resized) {
+            for (int wy = 0; wy < nh; wy++) {
+                float sy = (float)wy / nh * h;
+                int sy0 = (int)sy;
+                int sy1 = (sy0 + 1 < h) ? sy0 + 1 : sy0;
+                float fy = sy - sy0;
+                for (int wx = 0; wx < nw; wx++) {
+                    float sx = (float)wx / nw * w;
+                    int sx0 = (int)sx;
+                    int sx1 = (sx0 + 1 < w) ? sx0 + 1 : sx0;
+                    float fx = sx - sx0;
+                    for (int c = 0; c < 4; c++) {
+                        float v = (1-fy)*(1-fx)*pixels[sy0*w*4 + sx0*4 + c]
+                                + (1-fy)*fx   *pixels[sy0*w*4 + sx1*4 + c]
+                                + fy   *(1-fx)*pixels[sy1*w*4 + sx0*4 + c]
+                                + fy   *fx   *pixels[sy1*w*4 + sx1*4 + c];
+                        resized[wy*nw*4 + wx*4 + c] = (unsigned char)(v + 0.5f);
+                    }
+                }
+            }
+            stbi_image_free(pixels);
+            pixels = resized;
+            w = nw;
+            h = nh;
+            debug_log("[API] Downscaled cover to: %dx%d", w, h);
         }
     }
-    debug_log("[API] Album cover format: %s, size: %zu bytes", format, buf.len);
 
-    // Load the image data into a SpriteSheet
-    C2D_SpriteSheet sheet = C2D_SpriteSheetLoadFromMem(buf.data, buf.len);
-    if (!sheet) {
-        debug_log("[API] Failed to load album cover image. Image format (%s) may not be supported.", format);
-        buf_free(&buf);
-        return NULL;
+    // Power-of-two texture dimensions (at most 1024)
+    int pot_w = 1; while (pot_w < w) pot_w <<= 1;
+    int pot_h = 1; while (pot_h < h) pot_h <<= 1;
+
+    // Allocate C3D texture
+    C3D_Tex *tex = (C3D_Tex*)calloc(1, sizeof(C3D_Tex));
+    if (!tex) { stbi_image_free(pixels); return -1; }
+    C3D_TexInit(tex, pot_w, pot_h, GPU_RGB565);
+    if (!tex->data) {
+        debug_log("[API] C3D_TexInit failed for POT: %dx%d", pot_w, pot_h);
+        free(tex); stbi_image_free(pixels); return -1;
     }
+    C3D_TexSetFilter(tex, GPU_LINEAR, GPU_LINEAR);
 
-    debug_log("[API] Successfully loaded album cover image (format: %s)", format);
-    buf_free(&buf);
-    return sheet;
+    // Convert RGBA8→RGB565 and swizzle into GPU tiled format
+    swizzle_rgb565((u16*)tex->data, (u32*)pixels, w, h, pot_w, pot_h);
+    stbi_image_free(pixels);
+
+    // Flush data cache so GPU sees the pixels
+    GSPGPU_FlushDataCache(tex->data, pot_w * pot_h * 2);
+
+    // Subtexture covering the actual image area within the POT texture
+    Tex3DS_SubTexture *subtex = (Tex3DS_SubTexture*)malloc(sizeof(Tex3DS_SubTexture));
+    if (!subtex) { linearFree(tex->data); free(tex); return -1; }
+    subtex->width  = w;
+    subtex->height = h;
+    subtex->left   = 0.0f;
+    subtex->top    = (float)h / pot_h;
+    subtex->right  = (float)w / pot_w;
+    subtex->bottom = 0.0f;
+
+    out->image.tex    = tex;
+    out->image.subtex = subtex;
+    out->tex          = tex;
+    out->subtex       = subtex;
+
+    debug_log("[API] Successfully loaded album cover: %dx%d (POT: %dx%d)", w, h, pot_w, pot_h);
+    return 0;
 }
 
 // ---------------------------------------------------------------------------

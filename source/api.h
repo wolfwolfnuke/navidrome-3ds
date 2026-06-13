@@ -1,6 +1,7 @@
 #pragma once
 #include "config.h"
 #include <stddef.h>
+#include <citro2d.h>
 
 #define MAX_ITEMS    1000
 #define MAX_NAME_LEN 64
@@ -68,12 +69,13 @@ int api_get_tracks(const char *album_id, NaviTrackList *out);
 // Build a stream URL for a track (written into buf, len bytes)
 void api_stream_url(const char *track_id, char *buf, size_t len);
 
-// Forward declaration for C2D_Image
-struct C2D_Image_s;
+// Result of loading an album cover image
+typedef struct {
+    C2D_Image image;
+    void *tex;       // C3D_Tex*, free this with free()
+    void *subtex;    // Tex3DS_SubTexture*, free this with free()
+} AlbumCoverResult;
 
-// Forward declaration for citro2d types
-struct C2D_SpriteSheet_s;
-typedef struct C2D_SpriteSheet_s *C2D_SpriteSheetPtr;
-
-// Fetch album cover image; returns a SpriteSheet on success, NULL otherwise
-void *api_get_album_cover(const char *album_id);
+// Fetch album cover image; fills out on success. Returns 0 on success, -1 on error.
+// Caller must free result->tex and result->subtex with free() when done.
+int api_get_album_cover(const char *album_id, AlbumCoverResult *out);

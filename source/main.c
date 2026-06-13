@@ -141,6 +141,64 @@ int main(void) {
         set_status(state, "Audio unavailable (DSP not present)");
     }
 
+    debug_log("Pinging server...");
+    if (api_ping() != 0) {
+        debug_log("Ping failed");
+        set_status(state, "Cannot reach server! Check config.ini");
+    } else {
+        debug_log("Ping OK, loading artists...");
+        state->loading = true;
+        if (api_get_artists(&state->artists) == 0) {
+            debug_log("Artists loaded: %d", state->artists.count);
+            // Log raw bytes of first 5 artists to debug encoding
+            for (int i = 0; i < state->artists.count && i < 5; i++) {
+                const char *name = state->artists.items[i].name;
+                char hexbuf[128] = {0};
+                for (int j = 0; name[j] && j < 12; j++) {
+                    char tmp[8];
+                    snprintf(tmp, sizeof(tmp), "%02X ", (unsigned char)name[j]);
+                    strcat(hexbuf, tmp);
+                }
+                debug_log("Artist[%d]: '%s' bytes: %s", i, name, hexbuf);
+            }
+            state->loading       = false;
+            state->status_msg[0] = '\0';
+        } else {
+            debug_log("Artist load failed");
+            state->loading = false;
+            set_status(state, "Failed to load artists.");
+        }
+    }
+
+    debug_log("Pinging server...");
+    if (api_ping() != 0) {
+        debug_log("Ping failed");
+        set_status(state, "Cannot reach server! Check config.ini");
+    } else {
+        debug_log("Ping OK, loading artists...");
+        state->loading = true;
+        if (api_get_artists(&state->artists) == 0) {
+            debug_log("Artists loaded: %d", state->artists.count);
+            // Log raw bytes of first 5 artists to debug encoding
+            for (int i = 0; i < state->artists.count && i < 5; i++) {
+                const char *name = state->artists.items[i].name;
+                char hexbuf[128] = {0};
+                for (int j = 0; name[j] && j < 12; j++) {
+                    char tmp[8];
+                    snprintf(tmp, sizeof(tmp), "%02X ", (unsigned char)name[j]);
+                    strcat(hexbuf, tmp);
+                }
+                debug_log("Artist[%d]: '%s' bytes: %s", i, name, hexbuf);
+            }
+            state->loading       = false;
+            state->status_msg[0] = '\0';
+        } else {
+            debug_log("Artist load failed");
+            state->loading = false;
+            set_status(state, "Failed to load artists.");
+        }
+    }
+
     debug_log("Showing connecting screen...");
     set_status(state, "Connecting to server...");
     debug_log("[DBG] About to C3D_FrameBegin");
@@ -234,28 +292,34 @@ int main(void) {
                         debug_log("Tracks loaded for album: %s", id);
                         state->status_msg[0] = '\0';
                     }
-                    // Load album cover for this album
-                    if (state->album_cover_sheet) {
-                        C2D_SpriteSheetFree(state->album_cover_sheet);
-                        state->album_cover_sheet = NULL;
-                    }
-                    state->album_cover.tex = NULL; // reset previous cover
-                    C2D_SpriteSheet sheet = (C2D_SpriteSheet)api_get_album_cover(id);
-                    if (!sheet) {
-                        debug_log("[UI] Failed to load album cover for album: %s", id);
-                        state->album_cover.tex = NULL;
-                    } else {
-                        debug_log("[UI] Album cover loaded for album: %s", id);
-                        state->album_cover_sheet = sheet;
-                        state->album_cover.tex = C2D_SpriteSheetGetImage(sheet, 0).tex;
-                    }
-                    strncpy(state->album_cover_id, id, sizeof(state->album_cover_id) - 1);
-                    state->album_cover_id[sizeof(state->album_cover_id) - 1] = '\0';
+
                     state->loading = false;
                     break;
                 }
                 case SCREEN_PLAYER: {
                     debug_log("Navigating to player screen");
+                    // Free previous cover and load new one for this album
+                    if (state->album_cover_tex) {
+                        linearFree(((C3D_Tex*)state->album_cover_tex)->data);
+                        free(state->album_cover_tex);
+                        state->album_cover_tex = NULL;
+                    }
+                    if (state->album_cover_subtex) {
+                        free(state->album_cover_subtex);
+                        state->album_cover_subtex = NULL;
+                    }
+                    state->album_cover.tex = NULL;
+                    const char *album_id = state->albums.items[state->selected_album].id;
+                    AlbumCoverResult cover;
+                    if (api_get_album_cover(album_id, &cover) != 0) {
+                        debug_log("[UI] Failed to load album cover for album: %s", album_id);
+                    } else {
+                        debug_log("[UI] Album cover loaded for album: %s", album_id);
+                        state->album_cover = cover.image;
+                        state->album_cover_tex    = cover.tex;
+                        state->album_cover_subtex = cover.subtex;
+                    }
+
                     const char *id = state->tracks.items[state->selected_track].id;
                     char url[512];
                     api_stream_url(id, url, sizeof(url));

@@ -3,7 +3,6 @@
 #include "audio.h"
 #include <3ds.h>
 #include <citro2d.h>
-#include <citro3d.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
@@ -140,17 +139,87 @@ static void fonts_cleanup(void) {
 }
 
 // ---------------------------------------------------------------------------
+// UTF-8 decoder: returns next codepoint and advances *str
+// ---------------------------------------------------------------------------
+static uint32_t utf8_next(const char **str) {
+    const unsigned char *s = (const unsigned char *)*str;
+    uint32_t cp;
+    if (*s < 0x80) {
+        cp = *s++;
+    } else if (*s < 0xE0) {
+        cp = (*s++ & 0x1F) << 6;
+        if (*s >= 0x80) cp |= (*s++ & 0x3F);
+    } else if (*s < 0xF0) {
+        cp = (*s++ & 0x0F) << 12;
+        if (*s >= 0x80) cp |= (*s++ & 0x3F) << 6;
+        if (*s >= 0x80) cp |= (*s++ & 0x3F);
+    } else {
+        cp = (*s++ & 0x07) << 18;
+        if (*s >= 0x80) cp |= (*s++ & 0x3F) << 12;
+        if (*s >= 0x80) cp |= (*s++ & 0x3F) << 6;
+        if (*s >= 0x80) cp |= (*s++ & 0x3F);
+    }
+    *str = (const char *)s;
+    return cp;
+}
+
+// ---------------------------------------------------------------------------
 // draw_text: renders UTF-8 string using system fonts for full CJK support
 // Uses a text cache so parse/optimize happen once per unique string+font+scale.
 // ---------------------------------------------------------------------------
 static void draw_text(float x, float y, float sz, u32 color, const char *str) {
     if (!str || !str[0]) return;
 
-    CachedText *cached = cache_get_or_create(str, 0, sz);
-    float tw = 0, th = 0;
-    C2D_TextGetDimensions(&cached->parsed, sz, sz, &tw, &th);
-    C2D_DrawText(&cached->parsed, C2D_WithColor | C2D_AtBaseline,
-                 x, y, 0.5f, sz, sz, color);
+    char seg[256];
+    int  seg_font = 0;
+    int  seg_len  = 0;
+    float cur_x = x;
+
+    const char *p = str;
+    while (*p) {
+        const char *before = p;
+        uint32_t cp = utf8_next(&p);
+        int seq_len = (int)(p - before);
+
+        // Find which font has this glyph
+        int found_font = 0;
+        for (int fi = 0; fi < s_font_count; fi++) {
+            if (s_fonts[fi] && C2D_FontGlyphIndexFromCodePoint(s_fonts[fi], cp) != 0) {
+                found_font = fi;
+                break;
+            }
+        }
+
+        // If font changed or buffer full, flush current segment
+        if ((found_font != seg_font || seg_len + seq_len >= (int)sizeof(seg) - 1) && seg_len > 0) {
+            seg[seg_len] = '\0';
+
+            // Use cached text object - parse/optimize only once per unique string
+            CachedText *cached = cache_get_or_create(seg, seg_font, sz);
+
+            // Measure width to advance cur_x
+            float tw = 0, th = 0;
+            C2D_TextGetDimensions(&cached->parsed, sz, sz, &tw, &th);
+            C2D_DrawText(&cached->parsed, C2D_WithColor | C2D_AtBaseline,
+                         cur_x, y, 0.5f, sz, sz, color);
+            cur_x += tw;
+            seg_len = 0;
+        }
+
+        seg_font = found_font;
+        memcpy(seg + seg_len, before, seq_len);
+        seg_len += seq_len;
+    }
+
+    // Flush remaining segment
+    if (seg_len > 0) {
+        seg[seg_len] = '\0';
+        CachedText *cached = cache_get_or_create(seg, seg_font, sz);
+        float tw = 0, th = 0;
+        C2D_TextGetDimensions(&cached->parsed, sz, sz, &tw, &th);
+        C2D_DrawText(&cached->parsed, C2D_WithColor | C2D_AtBaseline,
+                     cur_x, y, 0.5f, sz, sz, color);
+    }
 }
 
 static void draw_rect(float x, float y, float w, float h, u32 color) {
@@ -184,8 +253,10 @@ static void draw_list(const char **names, int count,
             draw_rect(0, y - 2, BOT_W, ROW_H, COL_SELECTED);
         }
 
+        char label[160];
+        snprintf(label, sizeof(label), "%s", names[idx]);
         u32 col = (idx == selected) ? COL_ACCENT : COL_TEXT;
-        draw_text(8, y + 14, 0.45f, col, names[idx]);
+        draw_text(8, y + 14, 0.45f, col, label);
     }
 
     // Scrollbar
@@ -210,13 +281,14 @@ static void draw_now_playing(const UiState *state) {
             const NaviTrack *t = &state->tracks.items[state->selected_track];
 
             // Draw album cover if available
-            if (state->album_cover.tex && state->album_cover.subtex) {
-                float display = 145.0f;
-                float coverX = TOP_W - display - 23;
-                float coverY = 60;
-                float sx = display / state->album_cover.subtex->width;
-                float sy = display / state->album_cover.subtex->height;
-                C2D_DrawImageAt(state->album_cover, coverX, coverY, 0.5f, NULL, sx, sy);
+            if (state->album_cover.tex) {
+                float coverX = TOP_W - 100 - 8; // 100px wide, 8px margin
+                float coverY = 40;
+                // Album cover dimensions (fixed for now)
+                float coverW = 100;
+                float coverH = 100;
+                C2D_DrawImageAt(state->album_cover, coverX, coverY, 0.5f, NULL, 1.0f, 1.0f);
+            } else {
             }
 
             // Draw text info to the left of the album cover
@@ -290,8 +362,6 @@ void ui_draw(const UiState *state, C3D_RenderTarget *top, C3D_RenderTarget *bott
 
     // Build name arrays for the list
     static const char *names[MAX_ITEMS];
-    static Screen s_last_names_screen = SCREEN_ARTISTS;  // Initialize to first screen
-    static bool s_first_run = true;  // Ensure names are populated on first run
 
     switch (state->screen) {
         case SCREEN_ARTISTS: {
@@ -299,10 +369,8 @@ void ui_draw(const UiState *state, C3D_RenderTarget *top, C3D_RenderTarget *bott
             int display_count = state->artists.count;
             int display_selected = state->selected_artist;
             int display_scroll = state->scroll_offset;
-            if (s_first_run || s_last_names_screen != state->screen) {
-                for (int i = 0; i < display_count && i < MAX_ITEMS; i++) {
-                    names[i] = src->items[i].name;
-                }
+            for (int i = 0; i < display_count && i < MAX_ITEMS; i++) {
+                names[i] = src->items[i].name;
             }
             // Clamp selection to prevent out-of-bounds highlight
             if (display_count > 0 && display_selected >= display_count)
@@ -321,10 +389,8 @@ void ui_draw(const UiState *state, C3D_RenderTarget *top, C3D_RenderTarget *bott
             int display_count = state->albums.count;
             int display_selected = state->selected_album;
             int display_scroll = state->scroll_offset;
-            if (s_first_run || s_last_names_screen != state->screen) {
-                for (int i = 0; i < display_count && i < MAX_ITEMS; i++) {
-                    names[i] = src->items[i].name;
-                }
+            for (int i = 0; i < display_count && i < MAX_ITEMS; i++) {
+                names[i] = src->items[i].name;
             }
             // Clamp selection to prevent out-of-bounds highlight
             if (display_count > 0 && display_selected >= display_count)
@@ -343,10 +409,8 @@ void ui_draw(const UiState *state, C3D_RenderTarget *top, C3D_RenderTarget *bott
             int display_count = state->tracks.count;
             int display_selected = state->selected_track;
             int display_scroll = state->scroll_offset;
-            if (s_first_run || s_last_names_screen != state->screen) {
-                for (int i = 0; i < display_count && i < MAX_ITEMS; i++) {
-                    names[i] = src->items[i].title;
-                }
+            for (int i = 0; i < display_count && i < MAX_ITEMS; i++) {
+                names[i] = src->items[i].title;
             }
             // Clamp selection to prevent out-of-bounds highlight
             if (display_count > 0 && display_selected >= display_count)
@@ -369,9 +433,8 @@ void ui_draw(const UiState *state, C3D_RenderTarget *top, C3D_RenderTarget *bott
             break;
     }
 
-    s_first_run = false;
-    s_last_names_screen = state->screen;
 }
+
 
 
 bool ui_handle_input(UiState *state) {
@@ -542,8 +605,7 @@ void ui_init(UiState *state) {
     // Initialize album cover image
     debug_log("[UI] Initializing album cover image");
     memset(&state->album_cover, 0, sizeof(C2D_Image));
-    state->album_cover_tex    = NULL;
-    state->album_cover_subtex = NULL;
+    state->album_cover_sheet = NULL;
     debug_log("[UI] ui_init complete");
 }
 
@@ -553,17 +615,12 @@ void ui_cleanup(UiState *state) {
     cache_clear();
     fonts_cleanup();
     // Clean up album cover image
-    if (state->album_cover_tex) {
-        debug_log("[UI] Freeing album cover texture");
-        linearFree(((C3D_Tex*)state->album_cover_tex)->data);
-        free(state->album_cover_tex);
-        state->album_cover_tex = NULL;
+    if (state->album_cover_sheet) {
+        debug_log("[UI] Freeing album cover image");
+        C2D_SpriteSheetFree(state->album_cover_sheet);
+        state->album_cover_sheet = NULL;
+        state->album_cover.tex = NULL;
     }
-    if (state->album_cover_subtex) {
-        free(state->album_cover_subtex);
-        state->album_cover_subtex = NULL;
-    }
-    state->album_cover.tex = NULL;
     debug_log("[UI] Deleting text buffer");
     C2D_TextBufDelete(s_tbuf);
     debug_log("[UI] ui_cleanup complete");
